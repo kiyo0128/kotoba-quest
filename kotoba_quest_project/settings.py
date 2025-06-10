@@ -29,7 +29,24 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-b(j-=rq70du+%xhj8sb5no9l^_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+# Railway deployment
+RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '')
+RAILWAY_APP_URL = os.getenv('RAILWAY_APP_URL', '')
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+
+# Add Railway domains
+if RAILWAY_APP_URL:
+    from urllib.parse import urlparse
+    parsed_url = urlparse(RAILWAY_APP_URL)
+    ALLOWED_HOSTS.append(parsed_url.netloc)
+
+# Add Railway's auto-generated domain pattern
+if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    ALLOWED_HOSTS.extend([
+        '*.railway.app',
+        '*.up.railway.app'
+    ])
 
 # OpenAI API Settings
 # 環境変数から取得するように変更
@@ -65,6 +82,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -104,6 +122,11 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Railway PostgreSQL configuration
+import dj_database_url
+if os.getenv('DATABASE_URL'):
+    DATABASES['default'] = dj_database_url.parse(os.getenv('DATABASE_URL'))
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
