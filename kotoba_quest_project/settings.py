@@ -27,7 +27,11 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-b(j-=rq70du+%xhj8sb5no9l^_!iei7u_$6&m7j*&$*5smftl!')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+# Production settings for Railway
+if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    DEBUG = False
+else:
+    DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # Railway deployment
 RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '')
@@ -35,24 +39,24 @@ RAILWAY_APP_URL = os.getenv('RAILWAY_APP_URL', '')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-# Add Railway domains
+# Railway deployment - allow all subdomains
+ALLOWED_HOSTS.extend([
+    '.railway.app',
+    '.up.railway.app',
+    'web-production-5d3fc.up.railway.app',  # Specific Railway domain
+])
+
+# Add Railway domains from environment
 if RAILWAY_APP_URL:
     from urllib.parse import urlparse
     parsed_url = urlparse(RAILWAY_APP_URL)
     ALLOWED_HOSTS.append(parsed_url.netloc)
 
-# Add Railway's auto-generated domain pattern
-if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
-    ALLOWED_HOSTS.extend([
-        '*.railway.app',
-        '*.up.railway.app'
-    ])
-
 # OpenAI API Settings
 # 環境変数から取得するように変更
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is required. Please set it in your .env file.")
+if not OPENAI_API_KEY and not DEBUG:
+    raise ValueError("OPENAI_API_KEY environment variable is required.")
 
 # Application definition
 
