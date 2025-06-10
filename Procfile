@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn kotoba_quest_project.wsgi:application --bind 0.0.0.0:$PORT 
+web: gunicorn kotoba_quest_project.wsgi:application 
