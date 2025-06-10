@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}ホーム - ことばクエスト{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="display-4 mb-4">
+        <i class="bi bi-star-fill text-warning"></i>
+        ことばクエスト
+        <i class="bi bi-star-fill text-warning"></i>
+    </h1>
+    <p class="lead mb-4">たのしく こくごを まなびましょう！</p>
+</div>
+
+{% if user.is_authenticated %}
+    <!-- ユーザー情報カード -->
+    <div class="quiz-card mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3><i class="bi bi-person-circle"></i> {{ user.username }}さん、こんにちは！</h3>
+                <p class="mb-2">
+                    <strong>げんざいのランク:</strong> 
+                    <span class="rank-badge rank-{{ user.rank|lower }}">{{ user.rank }}</span>
+                </p>
+                <p class="mb-2">
+                    <strong>そうポイント:</strong> 
+                    <span class="badge bg-primary fs-6">{{ user.points_total }}ポイント</span>
+                </p>
+                {% if user.get_next_rank_info %}
+                <p class="mb-0">
+                    <strong>つぎのランクまで:</strong> 
+                    あと{{ user.get_next_rank_info.points_needed }}ポイント
+                </p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="bi bi-trophy text-warning" style="font-size: 4rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- クイズ開始ボタン -->
+    <div class="quiz-card text-center">
+        <h3 class="mb-3">
+            <i class="bi bi-play-circle"></i> 
+            あたらしいクイズにちょうせん！
+        </h3>
+        <p class="mb-4">10もんのクイズにこたえて、ポイントをかくとくしよう！</p>
+        <button id="startQuizBtn" class="btn btn-primary btn-quiz">
+            <i class="bi bi-rocket-takeoff"></i> 
+            クイズをはじめる
+        </button>
+    </div>
+
+    <!-- 進行中のクイズがある場合 -->
+    <div id="currentQuizCard" class="quiz-card" style="display: none;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4><i class="bi bi-clock"></i> しんこうちゅうのクイズがあります</h4>
+                <p class="mb-2">つづきからクイズをしましょう！</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <a href="{% url 'quiz:game' %}" class="btn btn-success btn-quiz">
+                    <i class="bi bi-arrow-right-circle"></i> 
+                    つづきをする
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近の成績 -->
+    <div class="quiz-card">
+        <h4 class="mb-3">
+            <i class="bi bi-graph-up"></i> 
+            さいきんのせいせき
+        </h4>
+        <div id="recentScores">
+            <p class="text-muted">データをよみこみちゅう...</p>
+        </div>
+    </div>
+
+{% else %}
+    <!-- ログインしていない場合 -->
+    <div class="quiz-card text-center">
+        <h3 class="mb-3">
+            <i class="bi bi-door-open"></i> 
+            ことばクエストをはじめよう！
+        </h3>
+        <p class="mb-4">
+            たのしいこくごクイズで、あたらしいことばをおぼえよう！<br>
+            まずはあかうんとをつくってね。
+        </p>
+        <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+            <a href="{% url 'account_signup' %}" class="btn btn-primary btn-quiz">
+                <i class="bi bi-person-plus"></i> 
+                あたらしいあかうんと
+            </a>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-quiz">
+                <i class="bi bi-box-arrow-in-right"></i> 
+                ログイン
+            </a>
+        </div>
+    </div>
+
+    <!-- 機能紹介 -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="quiz-card text-center">
+                <i class="bi bi-lightbulb text-warning" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">あたまがよくなる</h5>
+                <p>たのしいクイズで、ことばのちからがつきます</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="quiz-card text-center">
+                <i class="bi bi-trophy text-success" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">ランクアップ</h5>
+                <p>ポイントをためて、つよいランクになろう！</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="quiz-card text-center">
+                <i class="bi bi-heart text-danger" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">たのしくまなぶ</h5>
+                <p>ゲームみたいに、たのしくべんきょうできます</p>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 現在のセッションをチェック
+    checkCurrentSession();
+    
+    // 最近の成績を取得
+    loadRecentScores();
+    
+    // クイズ開始ボタンのイベント
+    document.getElementById('startQuizBtn').addEventListener('click', startNewQuiz);
+});
+
+async function checkCurrentSession() {
+    try {
+        const response = await axios.get('/api/quiz/api/current/');
+        if (response.data) {
+            // 進行中のセッションがある場合
+            document.getElementById('currentQuizCard').style.display = 'block';
+            document.getElementById('startQuizBtn').textContent = 'あたらしいクイズをはじめる';
+        }
+    } catch (error) {
+        // 進行中のセッションがない場合は何もしない
+        console.log('進行中のセッションはありません');
+    }
+}
+
+async function loadRecentScores() {
+    try {
+        const response = await axios.get('/api/quiz/api/history/');
+        const scores = response.data;
+        
+        if (scores.length === 0) {
+            document.getElementById('recentScores').innerHTML = 
+                '<p class="text-muted">まだクイズをやったことがないよ。はじめてみよう！</p>';
+            return;
+        }
+        
+        let html = '<div class="row">';
+        scores.slice(0, 3).forEach(session => {
+            const date = new Date(session.finished_at).toLocaleDateString('ja-JP');
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">${date}</h6>
+                            <p class="card-text">
+                                <strong>${session.score}/10もん</strong><br>
+                                <span class="badge bg-success">${session.points_earned}ポイント</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        document.getElementById('recentScores').innerHTML = html;
+        
+    } catch (error) {
+        document.getElementById('recentScores').innerHTML = 
+            '<p class="text-muted">せいせきのよみこみでエラーがはっせいしました。</p>';
+    }
+}
+
+async function startNewQuiz() {
+    const button = document.getElementById('startQuizBtn');
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> じゅんびちゅう...';
+    
+    try {
+        const response = await axios.post('/api/quiz/api/start/');
+        
+        if (response.data.session) {
+            // クイズ画面に遷移
+            window.location.href = '{% url "quiz:game" %}';
+        }
+    } catch (error) {
+        alert('クイズのかいしでエラーがはっせいしました。もういちどためしてください。');
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-rocket-takeoff"></i> クイズをはじめる';
+    }
+}
+</script>
+{% endif %}
+{% endblock %} 

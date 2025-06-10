@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}学習履歴 - ことばクエスト{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-12">
+            <!-- ページタイトル -->
+            <div class="game-card text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-history text-primary"></i>
+                    学習履歴
+                </h1>
+                <p class="lead">今までのクイズの成績を確認しよう！</p>
+            </div>
+
+            <!-- 統計情報 -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="game-card text-center h-100">
+                        <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                        <h5>総クイズ回数</h5>
+                        <h3 class="text-primary">{{ total_sessions }}回</h3>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="game-card text-center h-100">
+                        <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                        <h5>平均スコア</h5>
+                        <h3 class="text-warning">{{ average_score }}/10</h3>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="game-card text-center h-100">
+                        <i class="fas fa-trophy fa-2x text-success mb-2"></i>
+                        <h5>最高スコア</h5>
+                        <h3 class="text-success">{{ best_score }}/10</h3>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="game-card text-center h-100">
+                        <i class="fas fa-coins fa-2x text-info mb-2"></i>
+                        <h5>獲得ポイント</h5>
+                        <h3 class="text-info">{{ total_points }}pt</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今月の統計 -->
+            <div class="game-card mb-4">
+                <h4 class="mb-3">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    今月の学習状況
+                </h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>今月のクイズ回数:</strong> {{ current_month_sessions }}回</p>
+                        <div class="progress-custom">
+                            <div class="progress-bar-custom" style="width: {% if current_month_sessions > 0 %}{{ current_month_sessions|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-muted">
+                            <i class="fas fa-lightbulb"></i>
+                            継続して学習することで、より良い成績を達成できます！
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 履歴一覧 -->
+            <div class="game-card">
+                <h4 class="mb-3">
+                    <i class="fas fa-list text-primary"></i>
+                    最近のクイズ履歴
+                </h4>
+                
+                {% if sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>日時</th>
+                                    <th>スコア</th>
+                                    <th>正答率</th>
+                                    <th>獲得ポイント</th>
+                                    <th>所要時間</th>
+                                    <th>詳細</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                <tr>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ session.finished_at|date:"Y/m/d H:i" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <strong class="{% if session.score >= 8 %}text-success{% elif session.score >= 6 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ session.score }}/10
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if session.score >= 8 %}bg-success{% elif session.score >= 6 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ session.score|floatformat:0 }}0%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">+{{ session.points_earned }}pt</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {% if session.finished_at and session.started_at %}
+                                                {% with duration=session.finished_at|timesince:session.started_at %}
+                                                    {{ duration }}
+                                                {% endwith %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'quiz:result' session.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> 詳細
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if total_sessions > 20 %}
+                    <div class="text-center mt-3">
+                        <p class="text-muted">最新の20件を表示しています</p>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">まだクイズを始めていません</h5>
+                        <p class="text-muted">最初のクイズに挑戦してみましょう！</p>
+                        <a href="{% url 'quiz:start' %}" class="btn btn-primary-game">
+                            <i class="fas fa-play"></i> クイズを始める
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 戻るボタン -->
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="btn btn-secondary-game">
+                    <i class="fas fa-arrow-left"></i> ホームに戻る
+                </a>
+                <a href="{% url 'quiz:start' %}" class="btn btn-primary-game ms-2">
+                    <i class="fas fa-play"></i> 新しいクイズを始める
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // テーブルの行にホバー効果を追加
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %} 

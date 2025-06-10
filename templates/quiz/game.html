@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+
+{% block title %}クイズゲーム - ことばクエスト{% endblock %}
+
+{% block extra_css %}
+<style>
+.modal.show {
+    display: block !important;
+}
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- プログレスバー -->
+        <div class="game-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ol text-primary"></i>
+                        問題 {{ current_question_number }} / {{ total_questions }}
+                    </h5>
+                </div>
+                <div class="timer-display" id="timer">30</div>
+            </div>
+            
+            <div class="progress-custom">
+                <div class="progress-bar-custom" style="width: {{ progress_percentage }}%" id="progressBar"></div>
+            </div>
+            <small class="text-muted mt-2 d-block">
+                残り <span id="remainingCount">9</span>問
+            </small>
+        </div>
+
+        <!-- 問題カード -->
+        <div class="question-card">
+            <div class="text-center mb-4">
+                <div class="d-inline-block bg-primary text-white rounded-circle p-3 mb-3">
+                    <span class="fs-3 fw-bold">Q{{ current_question_number }}</span>
+                </div>
+            </div>
+
+            <h3 class="text-center mb-4" id="questionText">{{ current_question.text }}</h3>
+            
+            <!-- 選択肢 -->
+            <div class="choices-container">
+                {% for choice in current_question.choices %}
+                <button type="button" class="choice-btn" data-choice="{{ forloop.counter0 }}" onclick="selectChoice({{ forloop.counter0 }})">
+                    <div class="d-flex align-items-center">
+                        <div class="choice-number me-3">
+                            <span class="badge bg-secondary">{{ forloop.counter|add:"64"|stringformat:"c" }}</span>
+                        </div>
+                        <div class="choice-text">{{ choice }}</div>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- 回答ボタン -->
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-primary-game btn-lg" id="submitBtn" onclick="submitAnswer()" disabled>
+                    <i class="fas fa-check"></i> 回答する
+                </button>
+            </div>
+        </div>
+        
+        <!-- 応援メッセージ -->
+        <div class="game-card text-center">
+            <div id="encouragementMessage">
+                <i class="fas fa-lightbulb fa-2x text-warning mb-2"></i>
+                <p class="mb-0"><strong>ヒント：</strong>よく読んで、ゆっくり考えてね！</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 回答結果モーダル -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div id="resultContent">
+                    <!-- 動的に更新される -->
+                </div>
+                <button type="button" class="btn btn-primary-game btn-lg mt-3" onclick="nextQuestion()" id="nextBtn">
+                    次の問題へ <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 読み込み中モーダル -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" style="display: none;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="loading-spinner mb-3"></div>
+                <h5>回答を送信中...</h5>
+                <p class="text-muted mb-0">少々お待ちください。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentSessionId = {{ session.id }};
+let currentQuestionNumber = {{ current_question_number }};
+let selectedChoice = null;
+let timeLeft = 30;
+let timerInterval;
+let questionStartTime;
+
+// タイマー開始
+function startTimer() {
+    console.log('タイマー開始');
+    questionStartTime = Date.now();
+    timeLeft = 30;
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            handleTimeUp();
+        }
+    }, 1000);
+}
+
+// タイマー表示更新
+function updateTimerDisplay() {
+    const timerElement = document.getElementById('timer');
+    timerElement.textContent = timeLeft;
+    
+    if (timeLeft <= 10) {
+        timerElement.classList.add('text-danger');
+    } else {
+        timerElement.classList.remove('text-danger');
+    }
+}
+
+// 時間切れ処理
+function handleTimeUp() {
+    if (selectedChoice === null) {
+        selectedChoice = 0;
+    }
+    submitAnswer();
+}
+
+// 選択肢クリック
+function selectChoice(choiceIndex) {
+    console.log('選択肢選択:', choiceIndex);
+    
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    const selectedBtn = document.querySelector(`[data-choice="${choiceIndex}"]`);
+    selectedBtn.classList.add('selected');
+    selectedChoice = choiceIndex;
+    
+    document.getElementById('submitBtn').disabled = false;
+}
+
+// 回答送信
+function submitAnswer() {
+    console.log('回答送信開始:', selectedChoice);
+    
+    if (selectedChoice === null) {
+        console.log('選択肢未選択');
+        return;
+    }
+    
+    clearInterval(timerInterval);
+    
+    // ボタンを無効化
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.disabled = true;
+    });
+    document.getElementById('submitBtn').disabled = true;
+    
+    // ローディング表示
+    showLoadingModal();
+    
+    // CSRF トークン取得
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+        console.error('CSRFトークンが見つかりません');
+        hideLoadingModal();
+        alert('エラー: CSRFトークンが見つかりません');
+        return;
+    }
+    
+    const requestData = {
+        session_id: currentSessionId,
+        question_number: currentQuestionNumber,
+        selected_idx: selectedChoice
+    };
+    
+    console.log('送信データ:', requestData);
+        
+    // Fetch APIでリクエスト送信
+    fetch('{% url "quiz:answer_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        console.log('レスポンス受信:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('データ受信:', data);
+        hideLoadingModal();
+        setTimeout(() => {
+            showResult(data);
+        }, 500);
+    })
+    .catch(error => {
+        console.error('エラー:', error);
+        hideLoadingModal();
+        alert('エラー: ' + error.message);
+    });
+}
+
+// ローディングモーダル表示
+function showLoadingModal() {
+    console.log('ローディングモーダル表示');
+    const modal = document.getElementById('loadingModal');
+    modal.style.display = 'block';
+    modal.classList.add('show');
+}
+
+// ローディングモーダル非表示
+function hideLoadingModal() {
+    console.log('ローディングモーダル非表示');
+    const modal = document.getElementById('loadingModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+// 結果表示
+function showResult(data) {
+    console.log('結果表示:', data);
+    
+    if (data.status !== 'success') {
+        alert('エラー: ' + (data.message || '不明なエラー'));
+        return;
+    }
+    
+    const resultContent = document.getElementById('resultContent');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    const isCorrect = data.is_correct;
+    const iconClass = isCorrect ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
+    const resultText = isCorrect ? '正解！' : '不正解';
+    
+    resultContent.innerHTML = `
+        <div class="mb-3">
+            <i class="fas ${iconClass} fa-4x mb-3"></i>
+            <h3 class="${isCorrect ? 'text-success' : 'text-danger'}">${resultText}</h3>
+        </div>
+        <div class="p-3 bg-light rounded mb-3">
+            <h6>正解は：</h6>
+            <p class="mb-0"><strong>${data.correct_choice}</strong></p>
+        </div>
+        ${isCorrect ? '<p class="text-success"><i class="fas fa-star"></i> +10ポイント獲得！</p>' : ''}
+    `;
+    
+    console.log('has_next:', data.has_next);
+    
+    if (data.has_next) {
+        nextBtn.innerHTML = '次の問題へ <i class="fas fa-arrow-right"></i>';
+        nextBtn.onclick = function() {
+            console.log('次の問題へ');
+            hideResultModal();
+            location.reload(); // ページリロードで次の問題を表示
+        };
+    } else {
+        nextBtn.innerHTML = '結果を見る <i class="fas fa-trophy"></i>';
+        nextBtn.onclick = function() {
+            console.log('結果画面へ');
+            window.location.href = `/quiz/result/${currentSessionId}/`;
+        };
+    }
+    
+    showResultModal();
+}
+
+// 結果モーダル表示
+function showResultModal() {
+    console.log('結果モーダル表示');
+    const modal = document.getElementById('resultModal');
+    modal.style.display = 'block';
+    modal.classList.add('show');
+}
+
+// 結果モーダル非表示
+function hideResultModal() {
+    console.log('結果モーダル非表示');
+    const modal = document.getElementById('resultModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+// CSRFトークン取得
+function getCsrfToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : null;
+}
+
+// 応援メッセージの変更
+function updateEncouragementMessage() {
+    const messages = [
+        '<i class="fas fa-lightbulb fa-2x text-warning mb-2"></i><p class="mb-0"><strong>ヒント：</strong>よく読んで、ゆっくり考えてね！</p>',
+        '<i class="fas fa-heart fa-2x text-danger mb-2"></i><p class="mb-0"><strong>応援：</strong>きみならできる！がんばって！</p>',
+        '<i class="fas fa-smile fa-2x text-primary mb-2"></i><p class="mb-0"><strong>リラックス：</strong>深呼吸して、落ち着いて答えよう！</p>',
+        '<i class="fas fa-star fa-2x text-success mb-2"></i><p class="mb-0"><strong>集中：</strong>一文字ずつしっかり読んでね！</p>'
+    ];
+    
+    const messageElement = document.getElementById('encouragementMessage');
+    let currentIndex = 0;
+    
+    setInterval(() => {
+        currentIndex = (currentIndex + 1) % messages.length;
+        messageElement.innerHTML = messages[currentIndex];
+    }, 5000);
+}
+
+// 初期化
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('ページ初期化開始');
+    
+    // 残り問題数を更新
+    const remainingCount = {{ total_questions }} - {{ current_question_number }};
+    document.getElementById('remainingCount').textContent = remainingCount;
+    
+    // CSRF トークンを確保
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const form = document.createElement('form');
+        form.innerHTML = '{% csrf_token %}';
+        form.style.display = 'none';
+        document.body.appendChild(form);
+    }
+    
+    // タイマー開始
+    startTimer();
+    
+    // 応援メッセージの変更開始
+    updateEncouragementMessage();
+    
+    // キーボードショートカット
+    document.addEventListener('keydown', function(e) {
+        const choiceCount = {{ current_question.choices|length }};
+        if (e.key >= '1' && e.key <= '3') {  // 3択に修正
+            const choiceIndex = parseInt(e.key) - 1;
+            if (choiceIndex < choiceCount) {
+                selectChoice(choiceIndex);
+            }
+        } else if (e.key === 'Enter' && selectedChoice !== null) {
+            submitAnswer();
+        }
+    });
+    
+    console.log('ページ初期化完了');
+});
+</script>
+{% endblock %} 

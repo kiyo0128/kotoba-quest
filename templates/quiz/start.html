@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}クイズ開始 - ことばクエスト{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        {% if ongoing_session %}
+            <!-- 未完了のクイズがある場合 -->
+            <div class="game-card text-center">
+                <div class="mb-4">
+                    <i class="fas fa-pause-circle fa-4x text-warning mb-3"></i>
+                    <h2>途中のクイズがあります</h2>
+                    <p class="lead">前回途中で終了したクイズがあります。</p>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                            <h5>開始時刻</h5>
+                            <strong>{{ ongoing_session.started_at|date:"m/d H:i" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-list-ol fa-2x text-primary mb-2"></i>
+                            <h5>回答済み</h5>
+                            <strong>{{ ongoing_session.questions.count }}問中の一部</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{% url 'quiz:game' ongoing_session.id %}" class="btn btn-warning-game btn-lg me-3">
+                        <i class="fas fa-play"></i> 続きから始める
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="startNewQuiz()">
+                        <i class="fas fa-refresh"></i> 新しいクイズを始める
+                    </button>
+                </div>
+            </div>
+        {% else %}
+            <!-- 新しいクイズを開始する場合 -->
+            <div class="game-card text-center">
+                <div class="mb-4">
+                    <i class="fas fa-rocket fa-4x text-primary mb-3 celebration"></i>
+                    <h2>クイズを始めよう！</h2>
+                    <p class="lead">10問の国語クイズに挑戦してポイントを獲得しよう！</p>
+                </div>
+                
+                <!-- ルール説明 -->
+                <div class="row text-left mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <i class="fas fa-list-ol fa-2x text-info me-3"></i>
+                            <div>
+                                <h6 class="mb-1">問題数</h6>
+                                <span>全10問の5択クイズ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <i class="fas fa-clock fa-2x text-warning me-3"></i>
+                            <div>
+                                <h6 class="mb-1">制限時間</h6>
+                                <span>1問につき30秒</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <i class="fas fa-star fa-2x text-success me-3"></i>
+                            <div>
+                                <h6 class="mb-1">ポイント</h6>
+                                <span>正解1問につき10pt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <i class="fas fa-brain fa-2x text-purple me-3" style="color: #9C27B0;"></i>
+                            <div>
+                                <h6 class="mb-1">内容</h6>
+                                <span>小学1年生レベルの国語</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary-game btn-lg" onclick="startNewQuiz()">
+                        <i class="fas fa-play"></i> クイズをスタート！
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- 応援メッセージ -->
+        <div class="game-card text-center">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+                    <p class="mb-0"><strong>がんばって！</strong><br>きみならできる！</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <i class="fas fa-thumbs-up fa-2x text-success mb-2"></i>
+                    <p class="mb-0"><strong>落ち着いて！</strong><br>ゆっくり考えよう</p>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                    <p class="mb-0"><strong>楽しもう！</strong><br>学習は冒険だ！</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 読み込み中モーダル -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="loading-spinner mb-3"></div>
+                <h5>問題を準備中...</h5>
+                <p class="text-muted mb-0">AIが新しい問題を作成しています。少々お待ちください。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function startNewQuiz() {
+    // ローディング表示
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
+    
+    // CSRF トークンを取得
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('{% url "quiz:start_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        modal.hide();
+        
+        if (data.status === 'success') {
+            // 成功時は問題画面へリダイレクト
+            window.location.href = `/quiz/game/${data.session_id}/`;
+        } else if (data.status === 'ongoing') {
+            // 未完了のセッションがある場合は確認
+            if (confirm(data.message)) {
+                window.location.href = `/quiz/game/${data.session_id}/`;
+            }
+        } else {
+            showErrorMessage(data.message || 'クイズの開始に失敗しました');
+        }
+    })
+    .catch(error => {
+        modal.hide();
+        console.error('Error:', error);
+        showErrorMessage('ネットワークエラーが発生しました');
+    });
+}
+
+// CSRF トークンを追加
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const form = document.createElement('form');
+        form.innerHTML = '{% csrf_token %}';
+        form.style.display = 'none';
+        document.body.appendChild(form);
+    }
+});
+</script>
+{% endblock %} 

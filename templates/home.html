@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+
+{% block title %}ホーム - ことばクエスト{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- メインコンテンツ -->
+    <div class="col-lg-8">
+        <!-- ウェルカムカード -->
+        <div class="game-card text-center">
+            <h1 class="display-4 mb-4">
+                <i class="fas fa-star text-warning"></i>
+                ことばクエストへようこそ！
+                <i class="fas fa-star text-warning"></i>
+            </h1>
+            <p class="lead mb-4">
+                楽しいクイズで国語のお勉強をしよう！<br>
+                みんなで一緒に言葉の冒険に出発だ！
+            </p>
+            
+            {% if user.is_authenticated %}
+                <div class="row text-center mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                            <h5>現在のランク</h5>
+                            <span class="rank-badge rank-{{ user.rank|lower }}">{{ user.rank }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-star fa-2x text-primary mb-2"></i>
+                            <h5>総ポイント</h5>
+                            <strong class="text-primary fs-4">{{ user.points_total }}pt</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                            <h5>クイズ回数</h5>
+                            <strong class="text-success fs-4">{{ total_sessions }}回</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ランクアップ進捗 -->
+                {% if next_rank_info %}
+                <div class="mb-4">
+                    <h5><i class="fas fa-arrow-up text-success"></i> 次のランクまで</h5>
+                    <div class="progress-custom">
+                        <div class="progress-bar-custom" style="width: {{ progress_percentage|floatformat:0 }}%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        {{ next_rank_info.next_rank }}まであと{{ next_rank_info.points_needed }}ポイント！
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- クイズ開始ボタン -->
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{% url 'quiz:start' %}" class="btn btn-primary-game btn-game btn-lg me-3">
+                        <i class="fas fa-play"></i> クイズを始める
+                    </a>
+                    <a href="{% url 'quiz:history' %}" class="btn btn-secondary-game btn-game btn-lg">
+                        <i class="fas fa-history"></i> 学習履歴
+                    </a>
+                </div>
+            {% else %}
+                <!-- 未ログインユーザー向け -->
+                <div class="mb-4">
+                    <p class="fs-5">
+                        <i class="fas fa-info-circle text-info"></i>
+                        クイズを始めるには、まずアカウントを作ってね！
+                    </p>
+                </div>
+                <div class="d-grid gap-2 d-md-block">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-primary-game btn-game btn-lg me-3">
+                        <i class="fas fa-user-plus"></i> 新規登録
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-secondary-game btn-game btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> ログイン
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 機能紹介カード -->
+        <div class="game-card">
+            <h3 class="text-center mb-4">
+                <i class="fas fa-gamepad text-primary"></i> ゲームの遊び方
+            </h3>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="text-center p-3">
+                        <i class="fas fa-question-circle fa-3x text-info mb-3"></i>
+                        <h5>1回10問のクイズ</h5>
+                        <p class="text-muted">5つの選択肢から正解を選んでね！</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-center p-3">
+                        <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                        <h5>制限時間は30秒</h5>
+                        <p class="text-muted">しっかり考えて答えよう！</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-center p-3">
+                        <i class="fas fa-medal fa-3x text-success mb-3"></i>
+                        <h5>ポイントでランクアップ</h5>
+                        <p class="text-muted">正解するとポイントがもらえるよ！</p>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-center p-3">
+                        <i class="fas fa-brain fa-3x text-purple mb-3" style="color: #9C27B0;"></i>
+                        <h5>AI が問題を作成</h5>
+                        <p class="text-muted">いつも新しい問題に挑戦できる！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- サイドバー -->
+    <div class="col-lg-4">
+        {% if user.is_authenticated %}
+            <!-- 最近の成績 -->
+            {% if recent_sessions %}
+            <div class="game-card">
+                <h5><i class="fas fa-chart-bar text-primary"></i> 最近の成績</h5>
+                {% for session in recent_sessions %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <small class="text-muted">{{ session.started_at|date:"m/d H:i" }}</small><br>
+                        <strong>{{ session.score }}/10問正解</strong>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary">+{{ session.points_earned }}pt</span>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'quiz:history' %}" class="btn btn-outline-primary btn-sm">
+                        すべて見る <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 学習目標 -->
+            <div class="game-card">
+                <h5><i class="fas fa-target text-success"></i> 今日の目標</h5>
+                <div class="text-center">
+                    {% if today_sessions < 3 %}
+                        <p>今日のクイズ: {{ today_sessions }}/3回</p>
+                        <div class="progress-custom">
+                            <div class="progress-bar-custom" style="width: {{ today_progress|floatformat:0 }}%"></div>
+                        </div>
+                        <small class="text-muted">あと{{ remaining_today }}回でクリア！</small>
+                    {% else %}
+                        <div class="text-success">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <p><strong>今日の目標達成！</strong></p>
+                            <small>よくがんばりました！</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- ランクシステム説明 -->
+        <div class="game-card">
+            <h5><i class="fas fa-crown text-warning"></i> ランクシステム</h5>
+            <div class="rank-list">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="rank-badge rank-normal">ノーマル</span>
+                    <small>0 - 99pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="rank-badge rank-common">コモン</span>
+                    <small>100 - 299pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="rank-badge rank-rare">レア</span>
+                    <small>300 - 699pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="rank-badge rank-epic">エピック</span>
+                    <small>700 - 1499pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="rank-badge rank-legendary">レジェンダリー</span>
+                    <small>1500pt+</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- お知らせ -->
+        <div class="game-card">
+            <h5><i class="fas fa-bullhorn text-info"></i> お知らせ</h5>
+            <div class="small">
+                <div class="border-bottom py-2">
+                    <i class="fas fa-star text-warning"></i>
+                    <strong>新機能：</strong> 学習履歴グラフを追加しました！
+                </div>
+                <div class="border-bottom py-2">
+                    <i class="fas fa-gift text-success"></i>
+                    <strong>イベント：</strong> 今月は獲得ポイント2倍！
+                </div>
+                <div class="py-2">
+                    <i class="fas fa-question-circle text-info"></i>
+                    <strong>ヒント：</strong> 毎日続けることが大切だよ！
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- キャラクター吹き出し（フローティング） -->
+<div class="floating-character d-none d-lg-block" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+    <div class="speech-bubble bg-white p-3 rounded shadow" style="position: relative; max-width: 200px;">
+        <p class="mb-0 small">
+            <strong>こんにちは！</strong><br>
+            今日も一緒にお勉強しましょう！
+        </p>
+        <div style="position: absolute; bottom: -10px; right: 20px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 10px solid white;"></div>
+    </div>
+    <div class="text-center mt-2">
+        <i class="fas fa-robot fa-3x text-primary"></i>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // フローティングキャラクターのアニメーション
+    document.addEventListener('DOMContentLoaded', function() {
+        const character = document.querySelector('.floating-character');
+        if (character) {
+            // ランダムメッセージ
+            const messages = [
+                'がんばって！',
+                'クイズを始めよう！',
+                '今日も元気だね！',
+                '一緒に学習しよう！',
+                'きみならできる！'
+            ];
+            
+            setInterval(() => {
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                const speechBubble = character.querySelector('.speech-bubble p');
+                speechBubble.innerHTML = `<strong>応援メッセージ</strong><br>${randomMessage}`;
+            }, 10000); // 10秒ごとにメッセージ変更
+        }
+    });
+</script>
+{% endblock %} 
