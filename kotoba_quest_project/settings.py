@@ -46,11 +46,19 @@ ALLOWED_HOSTS.extend([
     'web-production-5d3fc.up.railway.app',  # Specific Railway domain
 ])
 
+# CSRF trusted origins for Railway
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.up.railway.app',
+    'https://web-production-5d3fc.up.railway.app',
+]
+
 # Add Railway domains from environment
 if RAILWAY_APP_URL:
     from urllib.parse import urlparse
     parsed_url = urlparse(RAILWAY_APP_URL)
     ALLOWED_HOSTS.append(parsed_url.netloc)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{parsed_url.netloc}')
 
 # OpenAI API Settings
 # 環境変数から取得するように変更
@@ -218,10 +226,18 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Security Settings
-SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = False  # Railway handles SSL
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+# CSRF and CORS settings for Railway
+if os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Static files storage
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
