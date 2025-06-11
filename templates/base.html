@@ -115,6 +115,9 @@
         .rank-common { background: #2196F3; color: white; }
         .rank-rare { background: #4CAF50; color: white; }
         .rank-epic { background: #9C27B0; color: white; }
+        .rank-legendary { background: #FF9800; color: white; }
+        .rank-mythic { background: #E91E63; color: white; }
+        .rank-god { background: #FFD700; color: #333; }
         .rank-legendary { background: linear-gradient(45deg, #FFD700, #FFA000); color: #333; }
         
         .points-display {
@@ -259,7 +262,7 @@
             <div class="d-flex align-items-center">
                 {% if user.is_authenticated %}
                     <span class="rank-badge rank-{{ user.rank|lower }}">
-                        {{ user.rank }}
+                        Lv.{{ user.level }} {{ user.rank }}
                     </span>
                     <span class="points-display">
                         <i class="fas fa-star"></i> {{ user.points_total }}pt

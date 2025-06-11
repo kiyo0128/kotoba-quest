@@ -2,183 +2,484 @@
 
 {% block title %}けっか - ことばクエスト{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* アニメーション定義 */
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes slideInUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+    }
+    
+    @keyframes sparkle {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.1) rotate(180deg); }
+    }
+    
+    /* 結果カード */
+    .result-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: bounceIn 0.8s ease-out;
+    }
+    
+    .result-icon {
+        animation: bounceIn 1s ease-out 0.2s both;
+        margin-bottom: 1rem;
+    }
+    
+    .result-title {
+        animation: slideInUp 0.6s ease-out 0.4s both;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+    
+    /* 統計カード */
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        animation: slideInUp 0.6s ease-out both;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+    
+    /* レベルアップ・ランクアップアラート */
+    .level-up-alert {
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        border: none;
+        color: #333;
+        font-weight: bold;
+        animation: glow 2s infinite;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .rank-up-alert {
+        background: linear-gradient(45deg, #9C27B0, #E91E63);
+        border: none;
+        color: white;
+        font-weight: bold;
+        animation: glow 2s infinite;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    /* バッジ表示 */
+    .badge-showcase {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 2rem 0;
+        color: white;
+    }
+    
+    .badge-item {
+        background: rgba(255,255,255,0.9);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        color: #333;
+        margin: 0.5rem;
+        animation: bounceIn 0.8s ease-out both;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .badge-item::before {
+        content: '✨';
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.5rem;
+        animation: sparkle 2s infinite;
+    }
+    
+    .badge-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: sparkle 3s infinite;
+    }
+    
+    /* プログレスバー */
+    .level-progress {
+        background: rgba(255,255,255,0.2);
+        border-radius: 10px;
+        height: 20px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    
+    .level-progress-bar {
+        background: linear-gradient(45deg, #4CAF50, #8BC34A);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 1s ease-out;
+        animation: slideInUp 1s ease-out 0.5s both;
+    }
+    
+    /* 問題詳細カード */
+    .question-detail-card {
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        animation: slideInUp 0.4s ease-out both;
+        border: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .question-number {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    /* 豪華なボタン */
+    .action-btn {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0.5rem;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(45deg, #4CAF50, #8BC34A);
+    }
+    
+    .action-btn.secondary {
+        background: linear-gradient(45deg, #FF9800, #FFC107);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div id="resultScreen">
-    <!-- 結果カード -->
-    <div class="quiz-card text-center mb-4">
-        <div id="resultIcon" class="mb-3">
-            {% if session.accuracy >= 90 %}
-                <i class="bi bi-trophy-fill text-warning" style="font-size: 5rem;"></i>
-            {% elif session.accuracy >= 70 %}
-                <i class="bi bi-emoji-smile-fill text-success" style="font-size: 5rem;"></i>
-            {% elif session.accuracy >= 50 %}
-                <i class="bi bi-emoji-neutral-fill text-primary" style="font-size: 5rem;"></i>
+    <!-- メイン結果カード -->
+    <div class="result-card">
+        <div class="result-icon">
+            {% if session.score >= 9 %}
+                <i class="fas fa-trophy" style="font-size: 5rem; color: gold;"></i>
+            {% elif session.score >= 7 %}
+                <i class="fas fa-medal" style="font-size: 5rem; color: silver;"></i>
+            {% elif session.score >= 5 %}
+                <i class="fas fa-thumbs-up" style="font-size: 5rem; color: #FFD700;"></i>
             {% else %}
-                <i class="bi bi-emoji-frown-fill text-warning" style="font-size: 5rem;"></i>
+                <i class="fas fa-heart" style="font-size: 5rem; color: #FF69B4;"></i>
             {% endif %}
         </div>
         
-        <h2 class="display-5 mb-3">クイズかんりょう！</h2>
+        <h1 class="result-title">
+            {% if session.score >= 9 %}
+                すばらしい！
+            {% elif session.score >= 7 %}
+                よくできました！
+            {% elif session.score >= 5 %}
+                がんばりました！
+            {% else %}
+                つぎはがんばろう！
+            {% endif %}
+        </h1>
         
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">せいかいすう</h5>
-                                <h3 class="text-primary">{{ session.score }}/10</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">せいかいりつ</h5>
-                                <h3 class="text-success">{{ session.accuracy }}%</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">かくとくポイント</h5>
-                                <h3 class="text-warning">{{ session.points_earned }}pt</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">げんざいのランク</h5>
-                                <div>
-                                    <span class="rank-badge rank-{{ session.user.rank|lower }}">{{ session.user.rank }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {% if rank_up %}
-        <div class="alert alert-success">
-            <h5><i class="bi bi-trophy"></i> ランクアップ！</h5>
-            <p class="mb-0">おめでとう！<strong>{{ old_rank }}</strong>から<strong>{{ new_rank }}</strong>になりました！</p>
-        </div>
-        {% endif %}
-        
-        <div class="alert alert-info">
-            <h6><i class="bi bi-arrow-up"></i> つぎのランクじょうほう</h6>
-            <p class="mb-0">つぎのランクまで もうすこしがんばろう！</p>
-        </div>
+        <p class="fs-4">クイズかんりょう！</p>
     </div>
 
-    <!-- 問題別詳細 -->
-    <div class="quiz-card">
-        <h4 class="mb-4">
-            <i class="bi bi-list-check"></i> 
-            もんだいべつけっか
-        </h4>
-        <div>
-            {% for qa in questions_with_answers %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex align-items-start">
-                        <div class="question-number me-3">{{ forloop.counter }}</div>
-                        <div class="flex-grow-1">
-                            <h6 class="card-title">{{ qa.question.text }}</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <small class="text-muted">あなたのこたえ:</small><br>
-                                    <span class="badge bg-{% if qa.is_correct %}success{% else %}danger{% endif %}">
-                                        {{ qa.user_choice|default:'みかいとう' }}
-                                    </span>
-                                </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">せいかい:</small><br>
-                                    <span class="badge bg-success">
-                                        {{ qa.correct_choice }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ms-3">
-                            <i class="bi bi-{% if qa.is_correct %}check-circle-fill text-success{% else %}x-circle-fill text-danger{% endif %}" style="font-size: 1.5rem;"></i>
-                        </div>
+    <!-- レベルアップ・ランクアップ通知 -->
+    {% if level_up %}
+    <div class="level-up-alert text-center">
+        <h3><i class="fas fa-arrow-up"></i> レベルアップ！</h3>
+        <p class="mb-0 fs-5">レベル {{ session.user.level }} に到達しました！</p>
+    </div>
+    {% endif %}
+    
+    {% if rank_up %}
+    <div class="rank-up-alert text-center">
+        <h3><i class="fas fa-crown"></i> ランクアップ！</h3>
+        <p class="mb-0 fs-5"><strong>{{ session.user.rank }}</strong>になりました！</p>
+    </div>
+    {% endif %}
+
+    <!-- 新しいバッジ獲得 -->
+    {% if new_badges %}
+    <div class="badge-showcase">
+        <h3 class="text-center mb-4"><i class="fas fa-award"></i> あたらしいバッジをかくとく！</h3>
+        <div class="row">
+            {% for badge in new_badges %}
+            <div class="col-md-6 col-lg-4">
+                <div class="badge-item">
+                    <div class="badge-icon text-{{ badge.color }}">
+                        <i class="fas fa-{{ badge.icon }}"></i>
                     </div>
+                    <h5>{{ badge.name }}</h5>
+                    <p class="small">{{ badge.description }}</p>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
+    {% endif %}
 
-    <!-- アクションボタン -->
-    <div class="quiz-card text-center">
-        <div class="d-grid gap-3 d-md-flex justify-content-md-center">
-            <a href="{% url 'quiz:start' %}" class="btn btn-primary btn-quiz">
-                <i class="bi bi-house"></i> 
-                ホームにもどる
-            </a>
-            <button id="retryBtn" class="btn btn-success btn-quiz">
-                <i class="bi bi-arrow-clockwise"></i> 
-                もういちどちょうせん
-            </button>
+    <!-- 統計情報 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-target fa-2x text-primary mb-2"></i>
+                <h5>せいかいすう</h5>
+                <h2 class="text-primary">{{ session.score }}/10</h2>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                <h5>かくとくポイント</h5>
+                <h2 class="text-warning">{{ session.points_earned }}pt</h2>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
+                <h5>げんざいのレベル</h5>
+                <h2 class="text-success">Lv.{{ session.user.level }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-fire fa-2x text-danger mb-2"></i>
+                <h5>れんぞく学習</h5>
+                <h2 class="text-danger">{{ consecutive_days }}日</h2>
+            </div>
         </div>
     </div>
-</div>
 
+    <!-- レベル進捗 -->
+    {% if next_level_info %}
+    <div class="game-card mb-4">
+        <h5><i class="fas fa-chart-line text-primary"></i> つぎのレベルまで</h5>
+        <div class="level-progress">
+            <div class="level-progress-bar" style="width: {{ level_progress }}%"></div>
+        </div>
+        <p class="mb-0">
+            レベル{{ next_level_info.next_level }}まで あと{{ next_level_info.exp_needed }}経験値
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- ランク進捗 -->
+    {% if next_rank_info %}
+    <div class="game-card mb-4">
+        <h5><i class="fas fa-crown text-warning"></i> つぎのランクまで</h5>
+        <div class="level-progress">
+            <div class="level-progress-bar" style="width: {{ rank_progress }}%"></div>
+        </div>
+        <p class="mb-0">
+            {{ next_rank_info.next_rank }}まで あと{{ next_rank_info.points_needed }}ポイント
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- 問題別詳細 -->
+    <div class="game-card">
+        <h4 class="mb-4">
+            <i class="fas fa-list-check text-primary"></i> 
+            もんだいべつけっか
+        </h4>
+        {% for qa in questions_with_answers %}
+        <div class="question-detail-card card">
+            <div class="card-body">
+                <div class="d-flex align-items-start">
+                    <div class="question-number me-3">{{ forloop.counter }}</div>
+                    <div class="flex-grow-1">
+                        <h6 class="card-title">{{ qa.question.text }}</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">あなたのこたえ:</small><br>
+                                <span class="badge bg-{% if qa.is_correct %}success{% else %}danger{% endif %}">
+                                    {{ qa.user_choice|default:'みかいとう' }}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">せいかい:</small><br>
+                                <span class="badge bg-success">
+                                    {{ qa.correct_choice }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ms-3">
+                        <i class="fas fa-{% if qa.is_correct %}check-circle text-success{% else %}x-circle text-danger{% endif %}" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- アクションボタン -->
+    <div class="text-center mt-4">
+        <a href="{% url 'quiz:start' %}" class="action-btn primary">
+            <i class="fas fa-redo"></i> もういちど
+        </a>
+        <a href="{% url 'quiz:history' %}" class="action-btn secondary">
+            <i class="fas fa-history"></i> 学習履歴
+        </a>
+        <a href="{% url 'home' %}" class="action-btn">
+            <i class="fas fa-home"></i> ホームにもどる
+        </a>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // リトライボタンのイベント
-    document.getElementById('retryBtn').addEventListener('click', startNewQuiz);
+    // 結果カードのアニメーション
+    setTimeout(() => {
+        document.querySelector('.result-card').style.transform = 'scale(1.02)';
+        setTimeout(() => {
+            document.querySelector('.result-card').style.transform = 'scale(1)';
+        }, 200);
+    }, 800);
+    
+    // バッジ獲得時の特別エフェクト
+    const badges = document.querySelectorAll('.badge-item');
+    badges.forEach((badge, index) => {
+        badge.style.animationDelay = `${index * 0.2}s`;
+    });
+    
+    // 統計カードのカウントアップアニメーション
+    const statNumbers = document.querySelectorAll('.stat-card h2');
+    statNumbers.forEach(stat => {
+        const finalNumber = parseInt(stat.textContent);
+        const suffix = stat.textContent.replace(/[0-9]/g, '');
+        let currentNumber = 0;
+        const increment = Math.ceil(finalNumber / 50);
+        
+        const countUp = setInterval(() => {
+            currentNumber += increment;
+            if (currentNumber >= finalNumber) {
+                currentNumber = finalNumber;
+                clearInterval(countUp);
+            }
+            stat.textContent = currentNumber + suffix;
+        }, 30);
+    });
+    
+    // 効果音（オプション - Web Audio API使用）
+    {% if new_badges %}
+    // バッジ獲得音
+    playAchievementSound();
+    {% endif %}
+    
+    {% if level_up or rank_up %}
+    // レベルアップ音
+    playLevelUpSound();
+    {% endif %}
 });
 
-async function startNewQuiz() {
-    const button = document.getElementById('retryBtn');
-    button.disabled = true;
-    button.innerHTML = '<i class="bi bi-hourglass-split"></i> じゅんびちゅう...';
-    
+function playAchievementSound() {
     try {
-        const response = await fetch('{% url "quiz:start_api" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken(),
-            },
-            credentials: 'same-origin'
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 明るい音階を生成
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C-E-G-C
+        
+        notes.forEach((freq, index) => {
+            setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }, index * 100);
         });
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            // 新しいクイズ画面に遷移
-            window.location.href = `/quiz/game/${data.session_id}/`;
-        } else {
-            throw new Error(data.message || 'クイズ開始に失敗');
-        }
-    } catch (error) {
-        alert('クイズのかいしでエラーがはっせいしました。もういちどためしてください。');
-        button.disabled = false;
-        button.innerHTML = '<i class="bi bi-arrow-clockwise"></i> もういちどちょうせん';
+    } catch (e) {
+        console.log('音声再生に対応していません');
     }
 }
 
-// CSRFトークン取得関数
-function getCsrfToken() {
-    const token = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (!token) {
-        // CSRFトークンがない場合は作成
-        const csrfForm = document.createElement('form');
-        csrfForm.innerHTML = '{% csrf_token %}';
-        csrfForm.style.display = 'none';
-        document.body.appendChild(csrfForm);
-        return csrfForm.querySelector('[name=csrfmiddlewaretoken]').value;
-        }
-    return token.value;
+function playLevelUpSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // ファンファーレ風の音階
+        const notes = [392.00, 493.88, 587.33, 783.99]; // G-B-D-G
+        
+        notes.forEach((freq, index) => {
+            setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                oscillator.type = 'triangle';
+                
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            }, index * 150);
+        });
+    } catch (e) {
+        console.log('音声再生に対応していません');
+    }
 }
 </script>
 {% endblock %} 

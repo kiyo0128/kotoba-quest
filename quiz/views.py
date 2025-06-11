@@ -90,8 +90,9 @@ class QuizResultView(LoginRequiredMixin, TemplateView):
         session = get_object_or_404(QuizSession, id=session_id, user=self.request.user)
         
         # セッションが未完了の場合は完了処理を実行
+        result_data = {}
         if not session.is_completed:
-            session.finish_session()
+            result_data = session.finish_session()
         
         # 結果の詳細を取得
         questions_with_answers = []
@@ -105,17 +106,37 @@ class QuizResultView(LoginRequiredMixin, TemplateView):
                 'correct_choice': question.choices[question.correct_idx],
             })
         
-        # ランクアップチェック
-        old_rank = session.user.rank
-        session.user.update_rank()
-        rank_up = old_rank != session.user.rank
+        # ユーザーの進捗情報を取得
+        user = session.user
+        next_level_info = user.get_next_level_info()
+        next_rank_info = user.get_next_rank_info()
+        
+        # レベル進捗率の計算
+        level_progress = 0
+        if next_level_info:
+            level_progress = (next_level_info['current_exp'] / next_level_info['level_exp_total']) * 100
+        
+        # ランク進捗率の計算
+        rank_progress = 0
+        if next_rank_info:
+            current_rank_points = next_rank_info['next_rank_points'] - next_rank_info['points_needed']
+            progress_in_rank = user.points_total - current_rank_points
+            total_rank_points = next_rank_info['points_needed']
+            if total_rank_points > 0:
+                rank_progress = (progress_in_rank / total_rank_points) * 100
         
         context.update({
             'session': session,
             'questions_with_answers': questions_with_answers,
-            'rank_up': rank_up,
-            'old_rank': old_rank,
-            'new_rank': session.user.rank,
+            'next_level_info': next_level_info,
+            'next_rank_info': next_rank_info,
+            'level_progress': round(level_progress, 1),
+            'rank_progress': round(rank_progress, 1),
+            'consecutive_days': user.consecutive_days,
+            # result_dataから取得（辞書型のため.get()を使用）
+            'level_up': result_data.get('level_up', False),
+            'rank_up': result_data.get('rank_up', False),
+            'new_badges': result_data.get('new_badges', []),
         })
         
         return context

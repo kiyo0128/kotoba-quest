@@ -2,6 +2,71 @@
 
 {% block title %}ホーム - ことばクエスト{% endblock %}
 
+{% block extra_css %}
+<style>
+    .user-info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    
+    .level-badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 15px;
+        padding: 1rem;
+        text-align: center;
+        margin: 0.5rem;
+        border: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .badge-collection {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .earned-badge {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        margin: 0.5rem;
+        border: 2px solid #e9ecef;
+        transition: transform 0.3s ease;
+    }
+    
+    .earned-badge:hover {
+        transform: translateY(-3px);
+    }
+    
+    .progress-ring {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    
+    .progress-ring-circle {
+        stroke-width: 6;
+        fill: transparent;
+        stroke: rgba(255,255,255,0.3);
+    }
+    
+    .progress-ring-progress {
+        stroke-width: 6;
+        fill: transparent;
+        stroke: #FFD700;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dasharray 1s ease;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <!-- メインコンテンツ -->
@@ -19,42 +84,51 @@
             </p>
             
             {% if user.is_authenticated %}
-                <div class="row text-center mb-4">
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 bg-light rounded">
-                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
-                            <h5>現在のランク</h5>
-                            <span class="rank-badge rank-{{ user.rank|lower }}">{{ user.rank }}</span>
+                <!-- ユーザー情報カード -->
+                <div class="user-info-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="progress-ring">
+                                <svg class="progress-ring">
+                                    <circle class="progress-ring-circle" cx="60" cy="60" r="50"></circle>
+                                    <circle class="progress-ring-progress" cx="60" cy="60" r="50" 
+                                            style="stroke-dasharray: {{ level_progress|default:0 }} 314;"></circle>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                    <h3>Lv.{{ user.level }}</h3>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 bg-light rounded">
-                            <i class="fas fa-star fa-2x text-primary mb-2"></i>
-                            <h5>総ポイント</h5>
-                            <strong class="text-primary fs-4">{{ user.points_total }}pt</strong>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 bg-light rounded">
-                            <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
-                            <h5>クイズ回数</h5>
-                            <strong class="text-success fs-4">{{ total_sessions }}回</strong>
+                        <div class="col-md-8">
+                            <h3>{{ user.username }}さん</h3>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="level-badge">
+                                        <i class="fas fa-crown"></i><br>
+                                        <strong>{{ user.rank }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="level-badge">
+                                        <i class="fas fa-star"></i><br>
+                                        <strong>{{ user.points_total }}pt</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="level-badge">
+                                        <i class="fas fa-fire"></i><br>
+                                        <strong>{{ user.consecutive_days }}日</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if next_level_info %}
+                            <p class="mt-3 mb-0">
+                                次のレベルまで <strong>{{ next_level_info.exp_needed }}経験値</strong>
+                            </p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-                
-                <!-- ランクアップ進捗 -->
-                {% if next_rank_info %}
-                <div class="mb-4">
-                    <h5><i class="fas fa-arrow-up text-success"></i> 次のランクまで</h5>
-                    <div class="progress-custom">
-                        <div class="progress-bar-custom" style="width: {{ progress_percentage|floatformat:0 }}%"></div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">
-                        {{ next_rank_info.next_rank }}まであと{{ next_rank_info.points_needed }}ポイント！
-                    </small>
-                </div>
-                {% endif %}
                 
                 <!-- クイズ開始ボタン -->
                 <div class="d-grid gap-2 d-md-block">
@@ -65,20 +139,35 @@
                         <i class="fas fa-history"></i> 学習履歴
                     </a>
                 </div>
-            {% else %}
-                <!-- 未ログインユーザー向け -->
-                <div class="mb-4">
-                    <p class="fs-5">
-                        <i class="fas fa-info-circle text-info"></i>
-                        クイズを始めるには、まずアカウントを作ってね！
-                    </p>
+                
+                <!-- バッジコレクション -->
+                {% if user_badges %}
+                <div class="badge-collection">
+                    <h5><i class="fas fa-award text-warning"></i> 獲得バッジ</h5>
+                    <div class="row">
+                        {% for badge in user_badges %}
+                        <div class="col-md-3 col-6">
+                            <div class="earned-badge">
+                                <i class="fas fa-{{ badge.icon }} fa-2x text-{{ badge.color }} mb-2"></i>
+                                <h6>{{ badge.name }}</h6>
+                                <small class="text-muted">{{ badge.description }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="d-grid gap-2 d-md-block">
-                    <a href="{% url 'accounts:register' %}" class="btn btn-primary-game btn-game btn-lg me-3">
-                        <i class="fas fa-user-plus"></i> 新規登録
-                    </a>
-                    <a href="{% url 'accounts:login' %}" class="btn btn-secondary-game btn-game btn-lg">
+                {% endif %}
+                
+            {% else %}
+                <!-- 未ログイン時 -->
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> 学習を始めるには</h5>
+                    <p class="mb-3">ログインまたは新規登録をして、楽しい言葉の冒険を始めましょう！</p>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary me-3">
                         <i class="fas fa-sign-in-alt"></i> ログイン
+                    </a>
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> 新規登録
                     </a>
                 </div>
             {% endif %}
@@ -189,9 +278,17 @@
                     <span class="rank-badge rank-epic">エピック</span>
                     <small>700 - 1499pt</small>
                 </div>
-                <div class="d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <span class="rank-badge rank-legendary">レジェンダリー</span>
-                    <small>1500pt+</small>
+                    <small>1500 - 2999pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span class="rank-badge rank-mythic">ミシック</span>
+                    <small>3000 - 4999pt</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="rank-badge rank-god">ゴッド</span>
+                    <small>5000pt+</small>
                 </div>
             </div>
         </div>
@@ -202,15 +299,15 @@
             <div class="small">
                 <div class="border-bottom py-2">
                     <i class="fas fa-star text-warning"></i>
-                    <strong>新機能：</strong> 学習履歴グラフを追加しました！
+                    <strong>新機能：</strong> バッジ・レベルシステム追加！
                 </div>
                 <div class="border-bottom py-2">
                     <i class="fas fa-gift text-success"></i>
-                    <strong>イベント：</strong> 今月は獲得ポイント2倍！
+                    <strong>イベント：</strong> 今月は獲得経験値2倍！
                 </div>
                 <div class="py-2">
                     <i class="fas fa-question-circle text-info"></i>
-                    <strong>ヒント：</strong> 毎日続けることが大切だよ！
+                    <strong>ヒント：</strong> 連続で学習してバッジを集めよう！
                 </div>
             </div>
         </div>
@@ -222,7 +319,11 @@
     <div class="speech-bubble bg-white p-3 rounded shadow" style="position: relative; max-width: 200px;">
         <p class="mb-0 small">
             <strong>こんにちは！</strong><br>
-            今日も一緒にお勉強しましょう！
+            {% if user.is_authenticated %}
+                レベル{{ user.level }}ですね！今日も頑張りましょう！
+            {% else %}
+                一緒にお勉強しましょう！
+            {% endif %}
         </p>
         <div style="position: absolute; bottom: -10px; right: 20px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 10px solid white;"></div>
     </div>
@@ -234,25 +335,31 @@
 
 {% block extra_js %}
 <script>
-    // フローティングキャラクターのアニメーション
-    document.addEventListener('DOMContentLoaded', function() {
-        const character = document.querySelector('.floating-character');
-        if (character) {
-            // ランダムメッセージ
-            const messages = [
-                'がんばって！',
-                'クイズを始めよう！',
-                '今日も元気だね！',
-                '一緒に学習しよう！',
-                'きみならできる！'
-            ];
-            
-            setInterval(() => {
-                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-                const speechBubble = character.querySelector('.speech-bubble p');
-                speechBubble.innerHTML = `<strong>応援メッセージ</strong><br>${randomMessage}`;
-            }, 10000); // 10秒ごとにメッセージ変更
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // レベル進捗のサークルアニメーション
+    const progressCircle = document.querySelector('.progress-ring-progress');
+    if (progressCircle) {
+        const progress = {{ level_progress|default:0 }};
+        const circumference = 2 * Math.PI * 50; // r=50
+        const offset = circumference - (progress / 100) * circumference;
+        
+        setTimeout(() => {
+            progressCircle.style.strokeDasharray = circumference;
+            progressCircle.style.strokeDashoffset = offset;
+        }, 500);
+    }
+    
+    // バッジのホバーエフェクト
+    const badges = document.querySelectorAll('.earned-badge');
+    badges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '';
+        });
     });
+});
 </script>
 {% endblock %} 

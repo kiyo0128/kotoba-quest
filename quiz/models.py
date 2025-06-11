@@ -60,23 +60,48 @@ class QuizSession(models.Model):
     
     def finish_session(self):
         """
-        セッションを終了し、ユーザーのポイントを更新する
+        セッションを終了し、ユーザーのポイント・レベル・バッジを更新する
         """
         if not self.is_completed:
             self.finished_at = timezone.now()
             self.is_completed = True
             self.calculate_score()
             
+            # 満点かどうかをチェック
+            if self.score == 10:
+                self.user.perfect_scores += 1
+            
+            # 連続学習日数を更新
+            self.user.update_consecutive_days()
+            
             # ユーザーの総ポイントを更新
             self.user.points_total += self.points_earned
+            
+            # レベルアップ処理
+            level_up = self.user.update_level(self.points_earned)
+            
+            # ランクアップ処理
+            rank_up = self.user.update_rank()
+            
+            # 新しいバッジをチェック
+            new_badges = self.user.check_new_badges(self)
+            
             self.user.save()
-            
-            # ランクを更新
-            self.user.update_rank()
-            
             self.save()
+            
+            # 結果を辞書で返す
+            return {
+                'score': self.score,
+                'points_earned': self.points_earned,
+                'level_up': level_up,
+                'rank_up': rank_up,
+                'new_badges': new_badges,
+                'user_level': self.user.level,
+                'user_rank': self.user.rank,
+                'consecutive_days': self.user.consecutive_days
+            }
         
-        return self.score
+        return {'score': self.score}
 
 
 class Question(models.Model):
