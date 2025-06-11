@@ -63,8 +63,14 @@ if RAILWAY_APP_URL:
 # OpenAI API Settings
 # 環境変数から取得するように変更
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-if not OPENAI_API_KEY and not DEBUG:
-    raise ValueError("OPENAI_API_KEY environment variable is required.")
+# Railway環境やマイグレーション時はAPIキーをオプションにする
+if not OPENAI_API_KEY and not DEBUG and not os.getenv('RAILWAY_ENVIRONMENT_NAME'):
+    import sys
+    # マイグレーション中やcollectstaticなどの管理コマンドでは警告のみ
+    if 'migrate' not in sys.argv and 'collectstatic' not in sys.argv and 'runserver' in sys.argv:
+        raise ValueError("OPENAI_API_KEY environment variable is required.")
+    else:
+        print("Warning: OPENAI_API_KEY not set. Some features may not work.")
 
 # Application definition
 
