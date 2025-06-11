@@ -137,14 +137,14 @@ class PreGeneratedQuestionService:
         if category:
             query = query.filter(category=category)
         
-        # 品質スコア順で取得し、その中からランダム選択
+        # 使用回数が少ない順で取得し、その中からランダム選択（重複を減らす）
         high_quality_questions = query.filter(
             quality_score__gte=self.min_quality_score
-        ).order_by('-quality_score')[:count * 2]  # 選択肢を多めに取得
+        ).order_by('used_count', '-quality_score')[:count * 3]  # 選択肢を多めに取得
         
         if high_quality_questions.count() < count:
-            # 足りない場合は全問題から選択
-            high_quality_questions = query.order_by('-quality_score')[:count * 2]
+            # 足りない場合は全問題から使用回数順で取得
+            high_quality_questions = query.order_by('used_count', '-quality_score')[:count * 3]
         
         # ランダム選択
         selected_questions = random.sample(

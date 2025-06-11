@@ -47,6 +47,7 @@
         width: 120px;
         height: 120px;
         margin: 0 auto;
+        position: relative;
     }
     
     .progress-ring-circle {
@@ -88,43 +89,75 @@
                 <div class="user-info-card">
                     <div class="row align-items-center">
                         <div class="col-md-4">
-                            <div class="progress-ring">
+                            <div class="progress-ring float-animation">
                                 <svg class="progress-ring">
                                     <circle class="progress-ring-circle" cx="60" cy="60" r="50"></circle>
                                     <circle class="progress-ring-progress" cx="60" cy="60" r="50" 
-                                            style="stroke-dasharray: {{ level_progress|default:0 }} 314;"></circle>
+                                            style="stroke-dasharray: {{ level_progress|default:0 }} 314; stroke: url(#gradient);"></circle>
+                                    <defs>
+                                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+                                            <stop offset="50%" style="stop-color:#45B7D1;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#4ECDC4;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
                                 </svg>
-                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                                    <h3>Lv.{{ user.level }}</h3>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                    <div class="level-badge-home">
+                                        <i class="fas fa-crown text-warning"></i>
+                                        <h3 class="mb-0">Lv.{{ user.level }}</h3>
+                                        <small class="text-muted">{{ user.rank }}</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-8">
-                            <h3>{{ user.username }}さん</h3>
+                            <div class="welcome-section mb-3">
+                                <h3 class="mb-2">
+                                    <i class="fas fa-child text-primary me-2"></i>
+                                    {{ user.username }}さん、おかえり！
+                                </h3>
+                                <p class="text-muted mb-0">今日も楽しく勉強しよう！</p>
+                            </div>
                             <div class="row text-center">
                                 <div class="col-4">
-                                    <div class="level-badge">
-                                        <i class="fas fa-crown"></i><br>
-                                        <strong>{{ user.rank }}</strong>
+                                    <div class="stat-card-home p-3 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #fff3e0 0%, #fff8e1 100%); border: 2px solid #FFD700;">
+                                        <i class="fas fa-crown fa-2x text-warning mb-2 float-animation"></i><br>
+                                        <small class="text-muted">ランク</small><br>
+                                        <strong class="text-warning">{{ user.rank }}</strong>
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <div class="level-badge">
-                                        <i class="fas fa-star"></i><br>
-                                        <strong>{{ user.points_total }}pt</strong>
+                                    <div class="stat-card-home p-3 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%); border: 2px solid #66BB6A;">
+                                        <i class="fas fa-star fa-2x text-success mb-2 float-animation"></i><br>
+                                        <small class="text-muted">ポイント</small><br>
+                                        <strong class="text-success">{{ user.points_total }}pt</strong>
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <div class="level-badge">
-                                        <i class="fas fa-fire"></i><br>
-                                        <strong>{{ user.consecutive_days }}日</strong>
+                                    <div class="stat-card-home p-3 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%); border: 2px solid #FF6B6B;">
+                                        <i class="fas fa-fire fa-2x text-danger mb-2 float-animation"></i><br>
+                                        <small class="text-muted">連続</small><br>
+                                        <strong class="text-danger">{{ user.consecutive_days }}日</strong>
                                     </div>
                                 </div>
                             </div>
                             {% if next_level_info %}
-                            <p class="mt-3 mb-0">
-                                次のレベルまで <strong>{{ next_level_info.exp_needed }}経験値</strong>
-                            </p>
+                            <div class="level-progress-info mt-3 p-3 rounded-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-arrow-up text-info me-1"></i>
+                                        次のレベルまで
+                                    </small>
+                                    <small class="fw-bold text-primary">{{ next_level_info.exp_needed }}経験値</small>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ next_level_info.progress_percentage|default:0 }}%; background: linear-gradient(90deg, #FF6B6B, #4ECDC4);" 
+                                         aria-valuenow="{{ next_level_info.progress_percentage|default:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
                     </div>

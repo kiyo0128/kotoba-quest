@@ -13,6 +13,8 @@ urlpatterns = [
     # API エンドポイント
     path('api/start/', views.start_quiz_api, name='start_api'),
     path('api/answer/', views.submit_answer_api, name='answer_api'),
+    path('api/finish/', views.finish_quiz_api, name='finish_api'),
+    path('api/stats/', views.quiz_stats_api, name='stats_api'),
     path('api/history/', views.quiz_history_api, name='history_api'),
     
     # 旧エンドポイント（後方互換性）

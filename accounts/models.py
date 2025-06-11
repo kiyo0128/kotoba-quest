@@ -97,7 +97,7 @@ class User(AbstractUser):
                 self.rank = rank
                 break
         
-        self.save()
+        # save()は呼び出し元で行う
         return old_rank != self.rank  # ランクアップしたかどうか
     
     def update_level(self, points_earned):
@@ -112,7 +112,7 @@ class User(AbstractUser):
         level_up = new_level > old_level
         self.level = new_level
         
-        self.save()
+        # save()は呼び出し元で行う
         return level_up
     
     def get_next_rank_info(self):
@@ -193,7 +193,7 @@ class User(AbstractUser):
                 'description': '3分以内でクリア',
                 'icon': 'bolt',
                 'color': 'success',
-                'condition': lambda user, session: session and session.duration and session.duration.total_seconds() < 180
+                'condition': lambda user, session: session and session.finished_at and session.started_at and (session.finished_at - session.started_at).total_seconds() < 180
             },
             'streak_3': {
                 'name': '継続の力',
@@ -269,9 +269,7 @@ class User(AbstractUser):
                     })
                     self.badges_earned.append(badge_id)
         
-        if new_badges:
-            self.save()
-        
+        # save()は呼び出し元で行う
         return new_badges
     
     def update_consecutive_days(self):
@@ -296,7 +294,7 @@ class User(AbstractUser):
             self.consecutive_days = 1
             self.last_study_date = today
         
-        self.save()
+        # save()は呼び出し元で行う
         return self.consecutive_days
 
 

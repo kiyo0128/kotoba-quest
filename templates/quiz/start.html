@@ -44,53 +44,69 @@
             <!-- 新しいクイズを開始する場合 -->
             <div class="game-card text-center">
                 <div class="mb-4">
-                    <i class="fas fa-rocket fa-4x text-primary mb-3 celebration"></i>
+                    <div class="float-animation mb-3">
+                        <i class="fas fa-rocket fa-4x text-primary celebration"></i>
+                        <div class="mt-2">
+                            <span class="badge bg-warning fs-6">✨ 新しい冒険 ✨</span>
+                        </div>
+                    </div>
                     <h2>クイズを始めよう！</h2>
-                    <p class="lead">10問の国語クイズに挑戦してポイントを獲得しよう！</p>
+                    <p class="lead">
+                        <span class="text-primary">🌟</span> 10問の国語クイズに挑戦してポイントを獲得しよう！ <span class="text-primary">🌟</span>
+                    </p>
                 </div>
                 
                 <!-- ルール説明 -->
-                <div class="row text-left mb-4">
+                <div class="row text-start mb-4">
                     <div class="col-md-6 mb-3">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <i class="fas fa-list-ol fa-2x text-info me-3"></i>
+                        <div class="d-flex align-items-center p-3 bg-gradient rounded-3 border border-info border-2" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
+                            <i class="fas fa-list-ol fa-2x text-info me-3 float-animation"></i>
                             <div>
-                                <h6 class="mb-1">問題数</h6>
-                                <span>全10問の5択クイズ</span>
+                                <h6 class="mb-1 fw-bold">📝 問題数</h6>
+                                <span class="text-muted">全10問の3択クイズ</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <i class="fas fa-clock fa-2x text-warning me-3"></i>
+                        <div class="d-flex align-items-center p-3 bg-gradient rounded-3 border border-warning border-2" style="background: linear-gradient(135deg, #fff3e0 0%, #fff8e1 100%);">
+                            <i class="fas fa-clock fa-2x text-warning me-3 float-animation"></i>
                             <div>
-                                <h6 class="mb-1">制限時間</h6>
-                                <span>1問につき30秒</span>
+                                <h6 class="mb-1 fw-bold">⏰ 制限時間</h6>
+                                <span class="text-muted">1問につき30秒</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <i class="fas fa-star fa-2x text-success me-3"></i>
+                        <div class="d-flex align-items-center p-3 bg-gradient rounded-3 border border-success border-2" style="background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);">
+                            <i class="fas fa-star fa-2x text-success me-3 float-animation"></i>
                             <div>
-                                <h6 class="mb-1">ポイント</h6>
-                                <span>正解1問につき10pt</span>
+                                <h6 class="mb-1 fw-bold">⭐ ポイント</h6>
+                                <span class="text-muted">正解1問につき10pt</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <i class="fas fa-brain fa-2x text-purple me-3" style="color: #9C27B0;"></i>
+                        <div class="d-flex align-items-center p-3 bg-gradient rounded-3 border border-2" style="background: linear-gradient(135deg, #f3e5f5 0%, #e8eaf6 100%); border-color: #9C27B0 !important;">
+                            <i class="fas fa-brain fa-2x me-3 float-animation" style="color: #9C27B0;"></i>
                             <div>
-                                <h6 class="mb-1">内容</h6>
-                                <span>小学1年生レベルの国語</span>
+                                <h6 class="mb-1 fw-bold">🧠 内容</h6>
+                                <span class="text-muted">小学1年生レベルの国語</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- 励ましメッセージ -->
+                <div class="alert alert-info border-0 mb-4" style="background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-lightbulb fa-lg text-warning me-2"></i>
+                        <span class="fw-bold">💡 わからない問題があっても大丈夫！ゆっくり考えてね</span>
+                        <i class="fas fa-heart fa-lg text-danger ms-2"></i>
                     </div>
                 </div>
                 
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary-game btn-lg" onclick="startNewQuiz()">
+                    <button type="button" class="btn btn-primary-game btn-lg shadow-lg" onclick="startNewQuiz()">
                         <i class="fas fa-play"></i> クイズをスタート！
                     </button>
                 </div>
@@ -98,19 +114,39 @@
         {% endif %}
         
         <!-- 応援メッセージ -->
-        <div class="game-card text-center">
+        <div class="game-card text-center" style="background: linear-gradient(135deg, #fff9c4 0%, #fff3e0 100%);">
+            <h5 class="mb-4">
+                <i class="fas fa-hands-helping text-warning"></i> 
+                みんなで応援してるよ！
+                <i class="fas fa-hands-helping text-warning"></i>
+            </h5>
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <i class="fas fa-heart fa-2x text-danger mb-2"></i>
-                    <p class="mb-0"><strong>がんばって！</strong><br>きみならできる！</p>
+                    <div class="p-3 rounded-3 bg-white shadow-sm">
+                        <i class="fas fa-heart fa-2x text-danger mb-2 float-animation"></i>
+                        <p class="mb-0">
+                            <strong class="text-danger">がんばって！</strong><br>
+                            <span class="text-muted">きみならできる！</span>
+                        </p>
+                    </div>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <i class="fas fa-thumbs-up fa-2x text-success mb-2"></i>
-                    <p class="mb-0"><strong>落ち着いて！</strong><br>ゆっくり考えよう</p>
+                    <div class="p-3 rounded-3 bg-white shadow-sm">
+                        <i class="fas fa-thumbs-up fa-2x text-success mb-2 float-animation"></i>
+                        <p class="mb-0">
+                            <strong class="text-success">落ち着いて！</strong><br>
+                            <span class="text-muted">ゆっくり考えよう</span>
+                        </p>
+                    </div>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
-                    <p class="mb-0"><strong>楽しもう！</strong><br>学習は冒険だ！</p>
+                    <div class="p-3 rounded-3 bg-white shadow-sm">
+                        <i class="fas fa-trophy fa-2x text-warning mb-2 float-animation"></i>
+                        <p class="mb-0">
+                            <strong class="text-warning">楽しもう！</strong><br>
+                            <span class="text-muted">学習は冒険だ！</span>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

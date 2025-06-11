@@ -305,10 +305,23 @@ def submit_answer_api(request):
             if has_next:
                 response_data['next_url'] = reverse('quiz:game', kwargs={'session_id': session.id})
             else:
-                session.finish_session()
-                response_data['final_score'] = session.score
-                response_data['points_earned'] = session.points_earned
-                response_data['redirect_url'] = reverse('quiz:result', kwargs={'session_id': session.id})
+                try:
+                    result_data = session.finish_session()
+                    response_data['final_score'] = session.score
+                    response_data['points_earned'] = session.points_earned
+                    response_data['redirect_url'] = reverse('quiz:result', kwargs={'session_id': session.id})
+                    
+                    # バッジやレベルアップ情報も追加
+                    if result_data:
+                        response_data.update(result_data)
+                except Exception as e:
+                    print(f"セッション終了処理エラー: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # エラーが発生してもクイズ結果は表示する
+                    response_data['final_score'] = session.score
+                    response_data['points_earned'] = session.points_earned
+                    response_data['redirect_url'] = reverse('quiz:result', kwargs={'session_id': session.id})
             
             return JsonResponse(response_data)
             
@@ -346,6 +359,104 @@ def quiz_history_api(request):
     return JsonResponse({
         'status': 'success',
         'history': history_data
+    })
+
+
+@login_required
+def finish_quiz_api(request):
+    """クイズセッション終了API"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            
+            if not session_id:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'session_id が必要です'
+                }, status=400)
+            
+            # セッションを取得
+            session = get_object_or_404(QuizSession, id=session_id, user=request.user)
+            
+            # セッション終了処理
+            result_data = session.finish_session()
+            
+            return JsonResponse({
+                'status': 'success',
+                'result': result_data
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無効なJSONデータです'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'セッション終了処理に失敗しました: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'POST method required'}, status=405)
+
+
+@login_required
+def quiz_stats_api(request):
+    """クイズ統計情報取得API"""
+    user = request.user
+    
+    # 基本統計
+    total_sessions = QuizSession.objects.filter(user=user, is_completed=True).count()
+    
+    if total_sessions > 0:
+        sessions = QuizSession.objects.filter(user=user, is_completed=True)
+        total_score = sum(session.score for session in sessions)
+        average_score = total_score / total_sessions
+        best_score = max(session.score for session in sessions)
+        total_points = sum(session.points_earned for session in sessions)
+        
+        # 最近の成績（過去7日間）
+        from datetime import datetime, timedelta
+        week_ago = datetime.now() - timedelta(days=7)
+        recent_sessions = sessions.filter(finished_at__gte=week_ago)
+        recent_average = sum(s.score for s in recent_sessions) / len(recent_sessions) if recent_sessions else 0
+        
+    else:
+        average_score = 0
+        best_score = 0
+        total_points = 0
+        recent_average = 0
+    
+    # ユーザー進捗情報
+    next_level_info = user.get_next_level_info()
+    next_rank_info = user.get_next_rank_info()
+    
+    stats_data = {
+        'user_stats': {
+            'username': user.username,
+            'level': user.level,
+            'rank': user.rank,
+            'points_total': user.points_total,
+            'consecutive_days': user.consecutive_days,
+            'perfect_scores': user.perfect_scores,
+        },
+        'quiz_stats': {
+            'total_sessions': total_sessions,
+            'average_score': round(average_score, 1),
+            'best_score': best_score,
+            'total_points_earned': total_points,
+            'recent_average': round(recent_average, 1),
+        },
+        'progress': {
+            'next_level_info': next_level_info,
+            'next_rank_info': next_rank_info,
+        }
+    }
+    
+    return JsonResponse({
+        'status': 'success',
+        'stats': stats_data
     })
 
 

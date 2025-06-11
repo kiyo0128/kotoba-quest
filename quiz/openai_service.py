@@ -4,6 +4,25 @@ import re
 from django.conf import settings
 from typing import List, Dict
 
+# ひらがな変換ライブラリ
+try:
+    from pykakasi import kakasi  # type: ignore
+    _kks = kakasi()
+    _kks.setMode("J", "H")  # 漢字(Kanji)→ひらがな
+    _kks.setMode("K", "H")  # カタカナ→ひらがな（全角）
+    _converter = _kks.getConverter()
+except Exception:  # ランタイムにライブラリが無い場合でも動作
+    _converter = None
+
+KANJI_PATTERN = re.compile(r"[一-龯]+")  # Kanji Unicode 範囲
+
+def _to_hiragana(text: str) -> str:
+    """文字列をひらがな化（pykakasi が利用可能な場合）"""
+    if _converter is not None:
+        return _converter.do(text)
+    # フォールバック: そのまま返す
+    return text
+
 
 class QuizGeneratorService:
     """
@@ -78,11 +97,13 @@ class QuizGeneratorService:
             content = response.choices[0].message.content
             questions = self._parse_response(content)
             
-            # 問題数が足りない場合は追加生成
+            # 重複排除 & ひらがな化
+            questions = self._post_process_questions(questions)
+            
+            # 不足分があれば追加生成
             if len(questions) < num_questions:
                 remaining = num_questions - len(questions)
-                additional_questions = self._generate_ai_questions(remaining)  # 再帰呼び出しを修正
-                questions.extend(additional_questions)
+                questions.extend(self._generate_ai_questions(remaining))
             
             return questions[:num_questions]
             
@@ -187,7 +208,7 @@ C) 選択肢3
             return None
         
         # 問題文を取得
-        question_text = lines[0].strip()
+        question_text = _to_hiragana(lines[0].strip())
         
         # 選択肢を取得
         choices = []
@@ -196,7 +217,7 @@ C) 選択肢3
         for line in lines[1:4]:
             match = re.match(choice_pattern, line)
             if match:
-                choices.append(match.group(1).strip())
+                choices.append(_to_hiragana(match.group(1).strip()))
         
         if len(choices) != 3:
             return None
@@ -219,6 +240,18 @@ C) 選択肢3
             "choices": choices,
             "answer": correct_answer
         }
+    
+    def _post_process_questions(self, questions: List[Dict]) -> List[Dict]:
+        """重複排除とひらがな化を保証"""
+        unique_questions = []
+        seen_texts = set()
+        for q in questions:
+            q["question"] = _to_hiragana(q["question"])
+            q["choices"] = [_to_hiragana(c) for c in q["choices"]]
+            if q["question"] not in seen_texts:
+                unique_questions.append(q)
+                seen_texts.add(q["question"])
+        return unique_questions
     
     def _get_fallback_questions(self, num_questions: int) -> List[Dict]:
         """

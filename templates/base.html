@@ -19,58 +19,119 @@
             --accent-color: #45B7D1;
             --warning-color: #FFA726;
             --success-color: #66BB6A;
+            --info-color: #42A5F5;
+            --purple-color: #AB47BC;
             --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --card-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            --border-radius-sm: 10px;
+            --border-radius-md: 15px;
+            --border-radius-lg: 20px;
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 1rem;
+            --spacing-md: 1.5rem;
+            --spacing-lg: 2rem;
+            --spacing-xl: 3rem;
         }
         
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            background: var(--background-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4ecdc4 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            font-size: 16px;
+            line-height: 1.6;
         }
         
         .main-container {
-            min-height: 100vh;
-            padding: 20px 0;
+            min-height: calc(100vh - 80px);
+            padding: var(--spacing-sm);
+        }
+        
+        /* 子供向けの楽しいエフェクト */
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(255, 107, 107, 0.6); }
+        }
+        
+        .float-animation {
+            animation: floatAnimation 3s ease-in-out infinite;
         }
         
         .game-card {
             background: white;
-            border-radius: 20px;
+            border-radius: var(--border-radius-lg);
             box-shadow: var(--card-shadow);
-            padding: 2rem;
-            margin: 1rem 0;
+            padding: var(--spacing-lg);
+            margin: var(--spacing-sm) 0;
             border: none;
             transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
         }
         
         .game-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
         
         .btn-game {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 500;
-            padding: 12px 30px;
-            border-radius: 25px;
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-radius: 30px;
             border: none;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
-            min-width: 180px;
+            min-width: 200px;
             text-align: center;
+            text-shadow: var(--text-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-game::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-game:hover::before {
+            left: 100%;
         }
         
         .btn-primary-game {
             background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
             color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
         }
         
         .btn-primary-game:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
             color: white;
         }
         
@@ -226,27 +287,105 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* レスポンシブ対応 */
-        @media (max-width: 768px) {
-            .game-card {
-                margin: 0.5rem;
-                padding: 1.5rem;
+        /* アクセシビリティ改善 */
+        .btn-game:focus,
+        .choice-btn:focus {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
         }
+        
+        /* 高コントラストモード対応 */
+        @media (prefers-contrast: high) {
+            .game-card {
+                border: 2px solid #000;
+            }
+            .choice-btn {
+                border-width: 2px;
+            }
+        }
+        
+        /* 動きを減らすユーザー向け */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 1200px) {
+            .game-card {
+                padding: var(--spacing-md);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            
+            .main-container {
+                padding: var(--spacing-xs);
+            }
+            
+            .game-card {
+                margin: var(--spacing-xs);
+                padding: var(--spacing-sm);
+                border-radius: var(--border-radius-md);
+            }
         
             .btn-game {
-                font-size: 1rem;
-                padding: 10px 20px;
+                font-size: 1.1rem;
+                padding: var(--spacing-sm) var(--spacing-md);
                 width: 100%;
-                margin: 5px 0;
+                margin: var(--spacing-xs) 0;
+                min-width: auto;
+            }
+        
+            .score-display {
+                font-size: 2.5rem;
+            }
+            
+            .choice-btn {
+                padding: var(--spacing-sm);
+                font-size: 1.1rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+            
+            .rank-badge,
+            .points-display {
+                font-size: 0.8rem;
+                padding: var(--spacing-xs);
+                margin: 0 2px;
+            }
         }
         
+        @media (max-width: 480px) {
+            .game-card {
+                margin: 2px;
+                padding: var(--spacing-sm);
+            }
+            
+            .btn-game {
+                font-size: 1rem;
+                padding: var(--spacing-sm);
+            }
+            
+            .choice-btn {
+                font-size: 1rem;
+                padding: var(--spacing-xs) var(--spacing-sm);
+            }
+            
             .score-display {
                 font-size: 2rem;
             }
             
-            .choice-btn {
-                padding: 12px 15px;
-                font-size: 1rem;
+            .navbar-brand {
+                font-size: 1.3rem;
             }
         }
     </style>

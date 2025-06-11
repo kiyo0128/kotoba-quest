@@ -7,6 +7,9 @@ from django.urls import reverse_lazy
 from .models import User
 from .forms import CustomUserCreationForm
 from django.db import models
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+import json
 
 
 class RegisterView(CreateView):
@@ -59,3 +62,114 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'プロフィールを更新しました！')
         return super().form_valid(form)
+
+
+# API Views
+@login_required
+def user_profile_api(request):
+    """ユーザープロフィール取得API"""
+    user = request.user
+    
+    # 基本プロフィール情報
+    profile_data = {
+        'username': user.username,
+        'email': user.email,
+        'level': user.level,
+        'rank': user.rank,
+        'points_total': user.points_total,
+        'consecutive_days': user.consecutive_days,
+        'perfect_scores': user.perfect_scores,
+        'created_at': user.date_joined.strftime('%Y-%m-%d'),
+        'badges_earned': user.badges_earned,
+    }
+    
+    # 進捗情報
+    next_level_info = user.get_next_level_info()
+    next_rank_info = user.get_next_rank_info()
+    
+    return JsonResponse({
+        'status': 'success',
+        'profile': profile_data,
+        'progress': {
+            'next_level_info': next_level_info,
+            'next_rank_info': next_rank_info,
+        }
+    })
+
+
+@login_required
+def update_user_profile_api(request):
+    """ユーザープロフィール更新API"""
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            user = request.user
+            
+            # 更新可能フィールド
+            if 'username' in data:
+                new_username = data['username'].strip()
+                if new_username and new_username != user.username:
+                    # ユーザー名の重複チェック
+                    if User.objects.filter(username=new_username).exclude(id=user.id).exists():
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': 'このユーザー名は既に使用されています'
+                        }, status=400)
+                    user.username = new_username
+            
+            if 'email' in data:
+                user.email = data['email']
+            
+            user.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'プロフィールを更新しました',
+                'profile': {
+                    'username': user.username,
+                    'email': user.email,
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '無効なJSONデータです'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'プロフィール更新に失敗しました: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'message': 'PUT method required'}, status=405)
+
+
+@login_required
+def user_ranking_api(request):
+    """ユーザーランキング取得API"""
+    # トップ20ユーザーを取得
+    top_users = User.objects.order_by('-points_total')[:20]
+    
+    ranking_data = []
+    for i, user in enumerate(top_users, 1):
+        ranking_data.append({
+            'rank': i,
+            'username': user.username,
+            'level': user.level,
+            'rank_name': user.rank,
+            'points_total': user.points_total,
+            'consecutive_days': user.consecutive_days,
+        })
+    
+    # 現在のユーザーの順位を計算
+    current_user_rank = User.objects.filter(
+        points_total__gt=request.user.points_total
+    ).count() + 1
+    
+    return JsonResponse({
+        'status': 'success',
+        'ranking': ranking_data,
+        'current_user_rank': current_user_rank,
+        'total_users': User.objects.count()
+    })
