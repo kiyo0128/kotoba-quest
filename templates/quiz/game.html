@@ -34,7 +34,7 @@
 }
 .numpad-btn {
     transition: all 0.2s ease;
-    border-radius: 8px !important;
+     !important;
     touch-action: manipulation;
     user-select: none;
 }
@@ -125,12 +125,12 @@
         <!-- 問題カード -->
         <div class="question-card shadow-lg">
             <div class="text-center mb-3">
-                <div class="d-inline-block text-white rounded-circle p-2 mb-2 shadow-sm float-animation question-number-badge">
+                <div class="d-inline-block text-white  p-2 mb-2 shadow-sm float-animation question-number-badge">
                     <span class="fs-4 fw-bold">Q{{ current_question_number }}</span>
                 </div>
             </div>
 
-            <div class="question-text-container p-3 mb-3 rounded-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="question-text-container p-3 mb-3 " style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 {% if current_question.question_type == 'math' %}
                 <div class="text-center">
                     <div class="pixel-equation mb-2">{{ current_question.text }}</div>
@@ -167,7 +167,7 @@
             <!-- 数値入力（算数問題の場合） -->
             <div class="numpad-container">
                 <div class="text-center mb-3">
-                    <div class="numpad-display p-2 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
+                    <div class="numpad-display p-2  shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
                         <div class="numpad-screen" id="numpadScreen" style="font-size: 2rem; font-weight: bold; color: #495057; min-height: 45px; display: flex; align-items: center; justify-content: center;">
                             0
                         </div>
