@@ -377,14 +377,14 @@
 
     <!-- アクションボタン -->
     <div class="text-center mt-4">
+        <a href="{% url 'home' %}" class="action-btn" style="padding: 1.5rem 3rem; font-size: 1.3rem; margin: 1rem;">
+            <i class="fas fa-home"></i> ホームにもどる
+        </a>
         <a href="{% url 'quiz:start' %}" class="action-btn primary">
             <i class="fas fa-redo"></i> もういちど
         </a>
         <a href="{% url 'quiz:history' %}" class="action-btn secondary">
             <i class="fas fa-history"></i> 学習履歴
-        </a>
-        <a href="{% url 'home' %}" class="action-btn">
-            <i class="fas fa-home"></i> ホームにもどる
         </a>
     </div>
 </div>

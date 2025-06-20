@@ -214,12 +214,21 @@
 
 .subject-card.selected {
     border-color: #28a745 !important;
-    box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 0 25px rgba(40, 167, 69, 0.4);
+    transform: translateY(-8px) scale(1.05);
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
 }
 
 .subject-card.selected.language {
     border-color: #007bff !important;
-    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 25px rgba(0, 123, 255, 0.4);
+    background: linear-gradient(135deg, #e3f2fd 0%, #cce7ff 100%) !important;
+}
+
+.subject-card.selected.math {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 25px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
 }
 </style>
 {% endblock %}

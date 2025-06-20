@@ -16,19 +16,19 @@
                     <!-- ステータス表示 -->
                     <div class="row text-center mb-4">
                         <div class="col-4">
-                            <div class="p-3 border rounded">
+                            <div class="p-3" style="border-top: 2px solid #ddd;">
                                 <h5 class="mb-1">Lv.{{ user.level }}</h5>
                                 <small class="text-muted">レベル</small>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-3 border rounded">
+                            <div class="p-3" style="border-top: 2px solid #ddd;">
                                 <h5 class="mb-1">{{ user.points_total }}</h5>
                                 <small class="text-muted">ポイント</small>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-3 border rounded">
+                            <div class="p-3" style="border-top: 2px solid #ddd;">
                                 <h5 class="mb-1">{{ user.consecutive_days }}</h5>
                                 <small class="text-muted">連続日数</small>
                             </div>
@@ -93,7 +93,7 @@
             <div class="game-card">
                 <h5>最近の成績</h5>
                 {% for session in recent_sessions|slice:":3" %}
-                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid #ddd;">
                     <div>
                         <small class="text-muted">{{ session.started_at|date:"m/d" }}</small><br>
                         <strong>{{ session.score }}/10問</strong>
