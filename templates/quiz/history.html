@@ -57,7 +57,7 @@
                     <div class="col-md-6">
                         <p><strong>今月のクイズ回数:</strong> {{ current_month_sessions }}回</p>
                         <div class="progress-custom">
-                            <div class="progress-bar-custom" style="width: {% if current_month_sessions > 0 %}{{ current_month_sessions|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                            <div class="progress-bar-custom" data-width="{{ current_month_sessions|default:0|floatformat:0 }}"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -166,6 +166,13 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // プログレスバーの幅を設定
+    const progressBars = document.querySelectorAll('.progress-bar-custom[data-width]');
+    progressBars.forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+    
     // テーブルの行にホバー効果を追加
     const tableRows = document.querySelectorAll('tbody tr');
     tableRows.forEach(row => {

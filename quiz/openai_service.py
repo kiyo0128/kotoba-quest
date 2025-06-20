@@ -1,5 +1,4 @@
 import openai
-import json
 import re
 from django.conf import settings
 from typing import List, Dict
@@ -189,7 +188,7 @@ C) 選択肢3
         
         for i, block in enumerate(question_blocks):
             try:
-                question_data = self._parse_single_question(block, i + 1)
+                question_data = self._parse_single_question(block)
                 if question_data:
                     questions.append(question_data)
             except Exception as e:
@@ -198,7 +197,7 @@ C) 選択肢3
         
         return questions
     
-    def _parse_single_question(self, block: str, question_num: int) -> Dict:
+    def _parse_single_question(self, block: str) -> Dict:
         """
         単一の問題ブロックをパースする
         """
