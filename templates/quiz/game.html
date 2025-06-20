@@ -3,6 +3,7 @@
 {% block title %}クイズゲーム - ことばクエスト{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% load static %}{% static 'css/pixel-characters.css' %}">
 <style>
 .modal.show {
     display: block !important;
@@ -30,6 +31,13 @@
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+.numpad-btn:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+.numpad-btn:active {
+    transform: scale(0.95);
 }
 </style>
 {% endblock %}
@@ -78,13 +86,22 @@
             </div>
 
             <div class="question-text-container p-4 mb-4 rounded-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                {% if current_question.question_type == 'math' %}
+                <div class="pixel-scene mb-3">
+                    <div class="pixel-character math-teacher bounce"></div>
+                    <div class="pixel-equation">{{ current_question.text }}</div>
+                    <div class="pixel-character calculator-char glow"></div>
+                </div>
+                {% else %}
                 <h3 class="text-center mb-0 fw-bold" id="questionText" style="font-size: 1.8rem; line-height: 1.5;">
                     <i class="fas fa-question-circle text-primary me-2"></i>
                     {{ current_question.text }}
                 </h3>
+                {% endif %}
             </div>
             
-            <!-- 選択肢 -->
+            <!-- 選択肢（国語問題の場合） -->
+            {% if current_question.answer_format == 'multiple_choice' %}
             <div class="choices-container">
                 {% for choice in current_question.choices %}
                 <button type="button" class="choice-btn shadow-sm" data-choice="{{ forloop.counter0 }}" onclick="selectChoice({{ forloop.counter0 }})">
@@ -99,6 +116,46 @@
                 </button>
                 {% endfor %}
             </div>
+            {% else %}
+            <!-- 数値入力（算数問題の場合） -->
+            <div class="numpad-container">
+                <div class="text-center mb-4">
+                    <div class="numpad-display p-3 rounded-3 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 3px solid #dee2e6;">
+                        <div class="numpad-screen" id="numpadScreen" style="font-size: 2.5rem; font-weight: bold; color: #495057; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                            0
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="numpad-grid">
+                    <div class="row g-2 justify-content-center">
+                        {% for i in "123456789" %}
+                        <div class="col-4">
+                            <button type="button" class="numpad-btn btn btn-outline-primary btn-lg w-100 shadow-sm" onclick="inputNumber('{{ i }}')" style="font-size: 1.5rem; font-weight: bold; aspect-ratio: 1;">
+                                {{ i }}
+                            </button>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="col-4">
+                            <button type="button" class="numpad-btn btn btn-outline-warning btn-lg w-100 shadow-sm" onclick="clearInput()" style="font-size: 1.2rem; font-weight: bold; aspect-ratio: 1;">
+                                <i class="fas fa-backspace"></i>
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="numpad-btn btn btn-outline-primary btn-lg w-100 shadow-sm" onclick="inputNumber('0')" style="font-size: 1.5rem; font-weight: bold; aspect-ratio: 1;">
+                                0
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button type="button" class="numpad-btn btn btn-outline-danger btn-lg w-100 shadow-sm" onclick="clearAll()" style="font-size: 1.2rem; font-weight: bold; aspect-ratio: 1;">
+                                <i class="fas fa-times"></i>C
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- 回答ボタン -->
             <div class="text-center mt-4">
@@ -167,9 +224,11 @@
 let currentSessionId = {{ session.id }};
 let currentQuestionNumber = {{ current_question_number }};
 let selectedChoice = null;
+let numericAnswer = null;
 let timeLeft = 30;
 let timerInterval;
 let questionStartTime;
+let isNumericQuestion = {% if current_question.answer_format == 'numeric' %}true{% else %}false{% endif %};
 
 // タイマー開始
 function startTimer() {
@@ -203,8 +262,14 @@ function updateTimerDisplay() {
 
 // 時間切れ処理
 function handleTimeUp() {
-    if (selectedChoice === null) {
-        selectedChoice = 0;
+    if (isNumericQuestion) {
+        if (numericAnswer === null) {
+            numericAnswer = 0;
+        }
+    } else {
+        if (selectedChoice === null) {
+            selectedChoice = 0;
+        }
     }
     submitAnswer();
 }
@@ -224,21 +289,79 @@ function selectChoice(choiceIndex) {
     document.getElementById('submitBtn').disabled = false;
 }
 
+// テンキー: 数字入力
+function inputNumber(num) {
+    const screen = document.getElementById('numpadScreen');
+    let currentValue = screen.textContent;
+    
+    if (currentValue === '0') {
+        currentValue = num;
+    } else if (currentValue.length < 2) { // 最大2桁まで
+        currentValue += num;
+    }
+    
+    screen.textContent = currentValue;
+    numericAnswer = parseInt(currentValue);
+    
+    // 回答ボタンを有効化
+    document.getElementById('submitBtn').disabled = false;
+}
+
+// テンキー: 一文字削除
+function clearInput() {
+    const screen = document.getElementById('numpadScreen');
+    let currentValue = screen.textContent;
+    
+    if (currentValue.length > 1) {
+        currentValue = currentValue.slice(0, -1);
+    } else {
+        currentValue = '0';
+        numericAnswer = null;
+        document.getElementById('submitBtn').disabled = true;
+    }
+    
+    screen.textContent = currentValue;
+    if (currentValue !== '0') {
+        numericAnswer = parseInt(currentValue);
+    }
+}
+
+// テンキー: 全クリア
+function clearAll() {
+    const screen = document.getElementById('numpadScreen');
+    screen.textContent = '0';
+    numericAnswer = null;
+    document.getElementById('submitBtn').disabled = true;
+}
+
 // 回答送信
 function submitAnswer() {
-    console.log('回答送信開始:', selectedChoice);
+    console.log('回答送信開始:', isNumericQuestion ? numericAnswer : selectedChoice);
     
-    if (selectedChoice === null) {
-        console.log('選択肢未選択');
-        return;
+    if (isNumericQuestion) {
+        if (numericAnswer === null) {
+            console.log('数値未入力');
+            return;
+        }
+    } else {
+        if (selectedChoice === null) {
+            console.log('選択肢未選択');
+            return;
+        }
     }
     
     clearInterval(timerInterval);
     
     // ボタンを無効化
-    document.querySelectorAll('.choice-btn').forEach(btn => {
-        btn.disabled = true;
-    });
+    if (isNumericQuestion) {
+        document.querySelectorAll('.numpad-btn').forEach(btn => {
+            btn.disabled = true;
+        });
+    } else {
+        document.querySelectorAll('.choice-btn').forEach(btn => {
+            btn.disabled = true;
+        });
+    }
     document.getElementById('submitBtn').disabled = true;
     
     // ローディング表示
@@ -255,9 +378,14 @@ function submitAnswer() {
     
     const requestData = {
         session_id: currentSessionId,
-        question_number: currentQuestionNumber,
-        selected_idx: selectedChoice
+        question_number: currentQuestionNumber
     };
+    
+    if (isNumericQuestion) {
+        requestData.numeric_answer = numericAnswer;
+    } else {
+        requestData.selected_idx = selectedChoice;
+    }
     
     console.log('送信データ:', requestData);
         

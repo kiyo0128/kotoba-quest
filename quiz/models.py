@@ -108,11 +108,35 @@ class Question(models.Model):
     """
     クイズの問題
     """
+    QUESTION_TYPES = [
+        ('language', '国語'),
+        ('math', '算数'),
+    ]
+    
+    ANSWER_FORMATS = [
+        ('multiple_choice', '選択問題'),
+        ('numeric', '数値入力'),
+    ]
+    
     session = models.ForeignKey(
         QuizSession,
         on_delete=models.CASCADE,
         verbose_name="セッション",
         related_name="questions"
+    )
+    
+    question_type = models.CharField(
+        max_length=20,
+        choices=QUESTION_TYPES,
+        default='language',
+        verbose_name="問題タイプ"
+    )
+    
+    answer_format = models.CharField(
+        max_length=20,
+        choices=ANSWER_FORMATS,
+        default='multiple_choice',
+        verbose_name="回答形式"
     )
     
     text = models.TextField(
@@ -122,13 +146,23 @@ class Question(models.Model):
     
     choices = models.JSONField(
         verbose_name="選択肢",
-        help_text="5つの選択肢のリスト",
-        default=list
+        help_text="選択肢のリスト（選択問題の場合）",
+        default=list,
+        blank=True
     )
     
     correct_idx = models.PositiveSmallIntegerField(
         verbose_name="正解のインデックス",
-        help_text="正解の選択肢のインデックス（0-4）"
+        help_text="正解の選択肢のインデックス（選択問題の場合）",
+        null=True,
+        blank=True
+    )
+    
+    correct_value = models.IntegerField(
+        verbose_name="正解の数値",
+        help_text="正解の数値（数値入力問題の場合）",
+        null=True,
+        blank=True
     )
     
     question_number = models.PositiveSmallIntegerField(
@@ -152,10 +186,13 @@ class Question(models.Model):
     
     def get_correct_answer(self):
         """
-        正解の選択肢を取得する
+        正解の選択肢または数値を取得する
         """
-        if 0 <= self.correct_idx < len(self.choices):
-            return self.choices[self.correct_idx]
+        if self.answer_format == 'numeric':
+            return self.correct_value
+        elif self.answer_format == 'multiple_choice' and self.correct_idx is not None:
+            if 0 <= self.correct_idx < len(self.choices):
+                return self.choices[self.correct_idx]
         return None
 
 
@@ -172,7 +209,16 @@ class Answer(models.Model):
     
     selected_idx = models.PositiveSmallIntegerField(
         verbose_name="選択した回答のインデックス",
-        help_text="ユーザーが選択した選択肢のインデックス（0-4）"
+        help_text="ユーザーが選択した選択肢のインデックス（選択問題の場合）",
+        null=True,
+        blank=True
+    )
+    
+    numeric_answer = models.IntegerField(
+        verbose_name="数値回答",
+        help_text="ユーザーが入力した数値（数値入力問題の場合）",
+        null=True,
+        blank=True
     )
     
     is_correct = models.BooleanField(
@@ -197,19 +243,55 @@ class Answer(models.Model):
         """
         保存時に正解判定を行う
         """
-        self.is_correct = self.selected_idx == self.question.correct_idx
+        if self.question.answer_format == 'numeric':
+            self.is_correct = self.numeric_answer == self.question.correct_value
+        elif self.question.answer_format == 'multiple_choice':
+            self.is_correct = self.selected_idx == self.question.correct_idx
+        else:
+            self.is_correct = False
         super().save(*args, **kwargs)
 
 
 class PreGeneratedQuestion(models.Model):
     """事前生成された高品質問題"""
+    QUESTION_TYPES = [
+        ('language', '国語'),
+        ('math', '算数'),
+    ]
+    
+    ANSWER_FORMATS = [
+        ('multiple_choice', '選択問題'),
+        ('numeric', '数値入力'),
+    ]
+    
+    question_type = models.CharField(
+        max_length=20,
+        choices=QUESTION_TYPES,
+        default='language',
+        verbose_name="問題タイプ"
+    )
+    
+    answer_format = models.CharField(
+        max_length=20,
+        choices=ANSWER_FORMATS,
+        default='multiple_choice',
+        verbose_name="回答形式"
+    )
+    
     question_text = models.TextField(verbose_name="問題文")
-    choice_1 = models.CharField(max_length=50, verbose_name="選択肢1")
-    choice_2 = models.CharField(max_length=50, verbose_name="選択肢2")
-    choice_3 = models.CharField(max_length=50, verbose_name="選択肢3")
+    choice_1 = models.CharField(max_length=50, verbose_name="選択肢1", blank=True)
+    choice_2 = models.CharField(max_length=50, verbose_name="選択肢2", blank=True)
+    choice_3 = models.CharField(max_length=50, verbose_name="選択肢3", blank=True)
     correct_answer = models.IntegerField(
         choices=[(0, 'A'), (1, 'B'), (2, 'C')],
-        verbose_name="正解"
+        verbose_name="正解インデックス",
+        null=True,
+        blank=True
+    )
+    correct_value = models.IntegerField(
+        verbose_name="正解の数値",
+        null=True,
+        blank=True
     )
     
     # 品質評価情報
@@ -223,6 +305,10 @@ class PreGeneratedQuestion(models.Model):
             ('colors', '色'),
             ('hiragana', 'ひらがな'),
             ('basic', '基本語彙'),
+            ('addition', '足し算'),
+            ('subtraction', '引き算'),
+            ('numbers', '数字'),
+            ('counting', '数え方'),
             ('others', 'その他'),
         ],
         default='others',
@@ -247,14 +333,28 @@ class PreGeneratedQuestion(models.Model):
     
     def get_choices_list(self):
         """選択肢をリストで取得"""
-        return [self.choice_1, self.choice_2, self.choice_3]
+        if self.answer_format == 'multiple_choice':
+            return [self.choice_1, self.choice_2, self.choice_3]
+        return []
     
     def to_dict(self):
         """辞書形式で問題データを取得"""
-        return {
+        data = {
             'question': self.question_text,
-            'choices': self.get_choices_list(),
-            'answer': self.correct_answer,
+            'question_type': self.question_type,
+            'answer_format': self.answer_format,
             'quality_score': self.quality_score,
             'category': self.category
         }
+        
+        if self.answer_format == 'multiple_choice':
+            data.update({
+                'choices': self.get_choices_list(),
+                'answer': self.correct_answer,
+            })
+        elif self.answer_format == 'numeric':
+            data.update({
+                'correct_value': self.correct_value,
+            })
+        
+        return data

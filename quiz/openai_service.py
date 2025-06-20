@@ -42,18 +42,21 @@ class QuizGeneratorService:
             self._pregenerated_service = PreGeneratedQuestionService()
         return self._pregenerated_service
     
-    def generate_questions(self, num_questions: int = 10, use_pregenerated: bool = True) -> List[Dict]:
+    def generate_questions(self, num_questions: int = 10, question_type: str = 'language', use_pregenerated: bool = True) -> List[Dict]:
         """
         指定された数の問題を生成する（高品質事前生成問題を優先使用）
         
         Args:
             num_questions: 生成する問題数（デフォルト: 10）
+            question_type: 問題のタイプ ('language' または 'math')
             use_pregenerated: 事前生成問題を使用するか（デフォルト: True）
             
         Returns:
             問題のリスト [{"question": "...", "choices": [...], "answer": 0}, ...]
         """
-        if use_pregenerated:
+        if question_type == 'math':
+            return self._generate_math_questions(num_questions)
+        elif use_pregenerated:
             # 事前生成問題とAI生成問題を混合使用（70%:30%）
             return self.pregenerated_service.get_mixed_questions(
                 count=num_questions,
@@ -239,6 +242,227 @@ C) 選択肢3
             "choices": choices,
             "answer": correct_answer
         }
+    
+    def _generate_math_questions(self, num_questions: int) -> List[Dict]:
+        """
+        小学1年生レベルの算数問題を生成する
+        
+        Args:
+            num_questions: 生成する問題数
+            
+        Returns:
+            問題のリスト
+        """
+        try:
+            print(f"算数問題生成開始 - モデル: gpt-4o-mini, 問題数: {num_questions}")
+            prompt = self._build_math_prompt(num_questions)
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": self._get_math_system_prompt()
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.3,  # 数学は創造性よりも正確性を重視
+                max_tokens=800,
+                top_p=0.8
+            )
+            
+            content = response.choices[0].message.content
+            questions = self._parse_math_response(content)
+            
+            # 不足分があれば追加生成
+            if len(questions) < num_questions:
+                remaining = num_questions - len(questions)
+                questions.extend(self._generate_math_questions(remaining))
+            
+            return questions[:num_questions]
+            
+        except Exception as e:
+            print(f"算数問題生成エラー: {e}")
+            # フォールバック算数問題を返す
+            return self._get_fallback_math_questions(num_questions)
+    
+    def _get_math_system_prompt(self) -> str:
+        """
+        算数問題用のシステムプロンプトを取得する
+        """
+        return """あなたは小学1年生向けの算数教材作成の専門家です。
+
+【重要ルール】
+1. 小学1年生レベルの計算のみ（1桁同士の足し算・引き算）
+2. 答えは0以上20以下の整数のみ
+3. 引き算の場合、答えが負の数にならないようにする
+4. 文章問題は簡単な日常的なシーンを使用
+5. ひらがな・カタカナ・数字のみ使用（漢字は使わない）
+
+【出題範囲】
+- 足し算: 1+1 から 9+9 まで（答えが20以下）
+- 引き算: 大きい数から小さい数を引く（答えが0以上）
+- 数の概念: 10までの数の大小、数え方
+- 文章問題: リンゴ、あめ、ボールなど身近なものを使った簡単な問題
+
+【出力形式】
+問題1: [問題文]
+答え: [数字]
+
+文章問題の場合も答えは数字のみにしてください。"""
+    
+    def _build_math_prompt(self, num_questions: int) -> str:
+        """
+        算数問題用のユーザープロンプトを構築する
+        """
+        return f"""小学1年生向けの算数問題を{num_questions}問作成してください。
+
+【必須条件】
+1. ひらがな・カタカナ・数字のみ使用（漢字禁止）
+2. 答えは0以上20以下の整数
+3. 1年生が理解できる範囲の計算のみ
+
+【問題の種類を混ぜて作成】
+- 足し算（例: 3 + 4 = ?）
+- 引き算（例: 8 - 3 = ?）
+- 文章問題（例: りんごが 5こ あります。2こ たべました。のこりは なんこでしょう？）
+- 数え方（例: ●●●●● は いくつでしょう？）
+
+形式：
+問題1: [問題文]
+答え: [数字]
+
+問題2: [問題文]  
+答え: [数字]
+
+{num_questions}問すべて作成してください。答えは必ず数字だけにしてください。"""
+    
+    def _parse_math_response(self, content: str) -> List[Dict]:
+        """
+        算数問題のChatGPT応答をパースして問題リストに変換する
+        """
+        questions = []
+        
+        # 問題を分割
+        question_blocks = re.split(r'問題\d+:', content)[1:]  # 最初の空文字を除く
+        
+        for i, block in enumerate(question_blocks):
+            try:
+                question_data = self._parse_single_math_question(block)
+                if question_data:
+                    questions.append(question_data)
+            except Exception as e:
+                print(f"算数問題{i+1}のパースエラー: {e}")
+                continue
+        
+        return questions
+    
+    def _parse_single_math_question(self, block: str) -> Dict:
+        """
+        単一の算数問題ブロックをパースする
+        """
+        lines = [line.strip() for line in block.split('\n') if line.strip()]
+        
+        if len(lines) < 2:  # 問題文 + 答え
+            return None
+        
+        # 問題文を取得
+        question_text = lines[0].strip()
+        
+        # 答えを取得
+        correct_value = None
+        for line in lines:
+            if line.startswith('答え:') or line.startswith('こたえ:'):
+                answer_match = re.search(r'\d+', line)
+                if answer_match:
+                    correct_value = int(answer_match.group())
+                    break
+        
+        if correct_value is None or correct_value < 0 or correct_value > 20:
+            return None
+        
+        return {
+            "question": question_text,
+            "question_type": "math",
+            "answer_format": "numeric",
+            "correct_value": correct_value
+        }
+    
+    def _get_fallback_math_questions(self, num_questions: int) -> List[Dict]:
+        """
+        算数問題のAPIエラー時のフォールバック問題
+        """
+        fallback_questions = [
+            {
+                "question": "2 + 3 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 5
+            },
+            {
+                "question": "5 - 2 = ?",
+                "question_type": "math", 
+                "answer_format": "numeric",
+                "correct_value": 3
+            },
+            {
+                "question": "りんごが 4こ あります。2こ たべました。のこりは なんこでしょう？",
+                "question_type": "math",
+                "answer_format": "numeric", 
+                "correct_value": 2
+            },
+            {
+                "question": "1 + 4 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 5
+            },
+            {
+                "question": "あめが 6こ あります。3こ あげました。のこりは なんこでしょう？",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 3
+            },
+            {
+                "question": "3 + 5 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 8
+            },
+            {
+                "question": "9 - 4 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 5
+            },
+            {
+                "question": "ボールが 7こ あります。4こ つかいました。のこりは なんこでしょう？",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 3
+            },
+            {
+                "question": "2 + 6 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 8
+            },
+            {
+                "question": "10 - 3 = ?",
+                "question_type": "math",
+                "answer_format": "numeric",
+                "correct_value": 7
+            }
+        ]
+        
+        # 必要な数だけ問題を返す（繰り返しも可）
+        questions = []
+        for i in range(num_questions):
+            questions.append(fallback_questions[i % len(fallback_questions)])
+        
+        return questions
     
     def _post_process_questions(self, questions: List[Dict]) -> List[Dict]:
         """重複排除とひらがな化を保証"""

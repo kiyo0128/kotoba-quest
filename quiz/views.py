@@ -98,12 +98,28 @@ class QuizResultView(LoginRequiredMixin, TemplateView):
         questions_with_answers = []
         for question in session.questions.all().order_by('question_number'):
             answer = question.answers.first()
+            
+            # ユーザーの回答を取得
+            if answer:
+                if question.answer_format == 'numeric':
+                    user_choice = str(answer.numeric_answer) if answer.numeric_answer is not None else 'なし'
+                else:
+                    user_choice = question.choices[answer.selected_idx] if answer.selected_idx is not None else 'なし'
+            else:
+                user_choice = 'なし'
+            
+            # 正解を取得
+            if question.answer_format == 'numeric':
+                correct_choice = str(question.correct_value)
+            else:
+                correct_choice = question.choices[question.correct_idx]
+            
             questions_with_answers.append({
                 'question': question,
                 'answer': answer,
                 'is_correct': answer.is_correct if answer else False,
-                'user_choice': question.choices[answer.selected_idx] if answer else None,
-                'correct_choice': question.choices[question.correct_idx],
+                'user_choice': user_choice,
+                'correct_choice': correct_choice,
             })
         
         # ユーザーの進捗情報を取得
@@ -197,7 +213,10 @@ def start_quiz_api(request):
     """クイズセッション開始API"""
     if request.method == 'POST':
         try:
-            print(f"クイズ開始API呼び出し - ユーザー: {request.user.username}")
+            data = json.loads(request.body)
+            question_type = data.get('question_type', 'language')  # 'language' or 'math'
+            
+            print(f"クイズ開始API呼び出し - ユーザー: {request.user.username}, タイプ: {question_type}")
             
             # 未完了のセッションがあるかチェック
             ongoing_session = QuizSession.objects.filter(
@@ -221,24 +240,33 @@ def start_quiz_api(request):
             print("問題生成サービス初期化中...")
             quiz_generator = QuizGeneratorService()
             print("問題生成開始...")
-            questions_data = quiz_generator.generate_questions(10)
+            questions_data = quiz_generator.generate_questions(10, question_type=question_type)
             print(f"問題生成完了: {len(questions_data)}問")
             
             # 問題をデータベースに保存
             print("問題をデータベースに保存中...")
             for i, q_data in enumerate(questions_data, 1):
-                Question.objects.create(
-                    session=session,
-                    text=q_data['question'],
-                    choices=q_data['choices'],
-                    correct_idx=q_data['answer'],
-                    question_number=i
-                )
+                question_kwargs = {
+                    'session': session,
+                    'text': q_data['question'],
+                    'question_number': i,
+                    'question_type': q_data.get('question_type', question_type),
+                    'answer_format': q_data.get('answer_format', 'multiple_choice')
+                }
+                
+                if q_data.get('answer_format') == 'numeric':
+                    question_kwargs['correct_value'] = q_data.get('correct_value')
+                else:
+                    question_kwargs['choices'] = q_data.get('choices', [])
+                    question_kwargs['correct_idx'] = q_data.get('answer', 0)
+                
+                Question.objects.create(**question_kwargs)
             print("問題保存完了")
             
             return JsonResponse({
                 'status': 'success',
                 'session_id': session.id,
+                'question_type': question_type,
                 'message': 'クイズセッションを開始しました！'
             })
             
@@ -263,9 +291,10 @@ def submit_answer_api(request):
             session_id = data.get('session_id')
             question_number = data.get('question_number')
             selected_idx = data.get('selected_idx')
+            numeric_answer = data.get('numeric_answer')
             
             # バリデーション
-            if not all([session_id, question_number is not None, selected_idx is not None]):
+            if not session_id or question_number is None:
                 return JsonResponse({
                     'status': 'error',
                     'message': '必要なパラメータが不足しています'
@@ -282,21 +311,44 @@ def submit_answer_api(request):
                     'message': 'この問題は既に回答済みです'
                 }, status=400)
             
+            # 回答形式に応じたバリデーション
+            if question.answer_format == 'numeric':
+                if numeric_answer is None:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '数値回答が必要です'
+                    }, status=400)
+            else:
+                if selected_idx is None:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '選択肢が必要です'
+                    }, status=400)
+            
             # 回答を保存
-            answer = Answer.objects.create(
-                question=question,
-                selected_idx=selected_idx
-            )
+            answer_kwargs = {'question': question}
+            if question.answer_format == 'numeric':
+                answer_kwargs['numeric_answer'] = numeric_answer
+            else:
+                answer_kwargs['selected_idx'] = selected_idx
+                
+            answer = Answer.objects.create(**answer_kwargs)
             
             # 次の問題があるかチェック
             next_question_number = question_number + 1
             has_next = next_question_number <= 10
             
+            # 正解表示用の情報を準備
+            if question.answer_format == 'numeric':
+                correct_display = str(question.correct_value)
+            else:
+                correct_display = question.choices[question.correct_idx]
+            
             response_data = {
                 'status': 'success',
                 'is_correct': answer.is_correct,
-                'correct_answer': question.correct_idx,
-                'correct_choice': question.choices[question.correct_idx],
+                'correct_answer': question.correct_idx if question.answer_format != 'numeric' else question.correct_value,
+                'correct_choice': correct_display,
                 'has_next': has_next,
                 'next_question_number': next_question_number if has_next else None
             }

@@ -52,8 +52,40 @@
                     </div>
                     <h2>クイズを始めよう！</h2>
                     <p class="lead">
-                        <span class="text-primary">🌟</span> 10問の国語クイズに挑戦してポイントを獲得しよう！ <span class="text-primary">🌟</span>
+                        <span class="text-primary">🌟</span> 10問のクイズに挑戦してポイントを獲得しよう！ <span class="text-primary">🌟</span>
                     </p>
+                </div>
+                
+                <!-- 科目選択 -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="subject-card h-100 rounded-3 border-3 border-primary p-4 text-center bg-gradient" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); cursor: pointer;" onclick="selectSubject('language')">
+                            <div class="pixel-character math-student mx-auto mb-3"></div>
+                            <h4 class="fw-bold text-primary mb-2">🔤 国語</h4>
+                            <p class="text-muted mb-2">ひらがな・カタカナ・言葉の学習</p>
+                            <div class="badge bg-primary fs-6 mb-2">3択問題</div>
+                            <div class="mt-3">
+                                <small class="text-primary">
+                                    <i class="fas fa-book-open me-1"></i>
+                                    動物の鳴き声、色、反対語など
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="subject-card h-100 rounded-3 border-3 border-success p-4 text-center bg-gradient" style="background: linear-gradient(135deg, #e8f5e8 0%, #fff8e1 100%); cursor: pointer;" onclick="selectSubject('math')">
+                            <div class="pixel-character math-teacher mx-auto mb-3"></div>
+                            <h4 class="fw-bold text-success mb-2">🔢 算数</h4>
+                            <p class="text-muted mb-2">足し算・引き算・数え方</p>
+                            <div class="badge bg-success fs-6 mb-2">数値入力</div>
+                            <div class="mt-3">
+                                <small class="text-success">
+                                    <i class="fas fa-calculator me-1"></i>
+                                    1桁の計算・文章問題など
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- ルール説明 -->
@@ -63,7 +95,7 @@
                             <i class="fas fa-list-ol fa-2x text-info me-3 float-animation"></i>
                             <div>
                                 <h6 class="mb-1 fw-bold">📝 問題数</h6>
-                                <span class="text-muted">全10問の3択クイズ</span>
+                                <span class="text-muted">全10問</span>
                             </div>
                         </div>
                     </div>
@@ -89,8 +121,8 @@
                         <div class="d-flex align-items-center p-3 bg-gradient rounded-3 border border-2" style="background: linear-gradient(135deg, #f3e5f5 0%, #e8eaf6 100%); border-color: #9C27B0 !important;">
                             <i class="fas fa-brain fa-2x me-3 float-animation" style="color: #9C27B0;"></i>
                             <div>
-                                <h6 class="mb-1 fw-bold">🧠 内容</h6>
-                                <span class="text-muted">小学1年生レベルの国語</span>
+                                <h6 class="mb-1 fw-bold">🧠 レベル</h6>
+                                <span class="text-muted">小学1年生向け</span>
                             </div>
                         </div>
                     </div>
@@ -100,14 +132,14 @@
                 <div class="alert alert-info border-0 mb-4" style="background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);">
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-lightbulb fa-lg text-warning me-2"></i>
-                        <span class="fw-bold">💡 わからない問題があっても大丈夫！ゆっくり考えてね</span>
+                        <span class="fw-bold">💡 科目を選んでクイズを始めよう！</span>
                         <i class="fas fa-heart fa-lg text-danger ms-2"></i>
                     </div>
                 </div>
                 
-                <div class="d-grid gap-2">
+                <div id="startButtonContainer" class="d-grid gap-2" style="display: none !important;">
                     <button type="button" class="btn btn-primary-game btn-lg shadow-lg" onclick="startNewQuiz()">
-                        <i class="fas fa-play"></i> クイズをスタート！
+                        <i class="fas fa-play"></i> <span id="startButtonText">クイズをスタート！</span>
                     </button>
                 </div>
             </div>
@@ -167,9 +199,67 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% load static %}{% static 'css/pixel-characters.css' %}">
+<style>
+.subject-card {
+    transition: all 0.3s ease;
+    border: 3px solid transparent !important;
+}
+
+.subject-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.subject-card.selected {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);
+}
+
+.subject-card.selected.language {
+    border-color: #007bff !important;
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
+let selectedQuestionType = null;
+
+function selectSubject(type) {
+    selectedQuestionType = type;
+    
+    // すべてのカードからselectedクラスを削除
+    document.querySelectorAll('.subject-card').forEach(card => {
+        card.classList.remove('selected', 'language', 'math');
+    });
+    
+    // 選択されたカードにselectedクラスを追加
+    const selectedCard = document.querySelector(`[onclick="selectSubject('${type}')"]`);
+    selectedCard.classList.add('selected', type);
+    
+    // スタートボタンを表示
+    const buttonContainer = document.getElementById('startButtonContainer');
+    const buttonText = document.getElementById('startButtonText');
+    
+    if (type === 'language') {
+        buttonText.textContent = '国語クイズをスタート！';
+    } else if (type === 'math') {
+        buttonText.textContent = '算数クイズをスタート！';
+    }
+    
+    buttonContainer.style.display = 'block';
+    buttonContainer.classList.remove('d-none');
+}
+
 function startNewQuiz() {
+    if (!selectedQuestionType) {
+        alert('科目を選択してください');
+        return;
+    }
+    
     // ローディング表示
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
     modal.show();
@@ -183,7 +273,10 @@ function startNewQuiz() {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,
         },
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            question_type: selectedQuestionType
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -206,6 +299,10 @@ function startNewQuiz() {
         console.error('Error:', error);
         showErrorMessage('ネットワークエラーが発生しました');
     });
+}
+
+function showErrorMessage(message) {
+    alert(message);
 }
 
 // CSRF トークンを追加

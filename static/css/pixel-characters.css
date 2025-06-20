@@ -1,0 +1,260 @@
+/* マインクラフト風ピクセルキャラクター CSS */
+
+.pixel-character {
+    display: inline-block;
+    position: relative;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* 算数の先生キャラクター - ロボット風 */
+.math-teacher {
+    width: 64px;
+    height: 64px;
+    background: #4A90E2;
+    position: relative;
+    box-shadow: 
+        inset 0 0 0 2px #357ABD,
+        inset 0 0 0 4px #2E5A8B;
+}
+
+.math-teacher::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 48px;
+    height: 48px;
+    background: #5BA0F2;
+    box-shadow: 
+        0 0 0 2px #357ABD,
+        inset 8px 8px 0 #6BB0FF,
+        inset -8px -8px 0 #3580CD;
+}
+
+.math-teacher::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 32px;
+    height: 32px;
+    background: 
+        linear-gradient(to right, 
+            #2E5A8B 0%, #2E5A8B 25%,
+            #4A90E2 25%, #4A90E2 75%,
+            #2E5A8B 75%, #2E5A8B 100%),
+        linear-gradient(to bottom,
+            #5BA0F2 0%, #5BA0F2 25%,
+            #4A90E2 25%, #4A90E2 75%,
+            #357ABD 75%, #357ABD 100%);
+}
+
+/* 算数の生徒キャラクター - 子供風 */
+.math-student {
+    width: 56px;
+    height: 56px;
+    background: #FF8B94;
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 
+        inset 0 0 0 2px #E5707A,
+        inset 0 0 0 4px #CC5965;
+}
+
+.math-student::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 44px;
+    height: 44px;
+    background: #FFB3BA;
+    border-radius: 2px;
+    box-shadow: 
+        inset 6px 6px 0 #FFC9CE,
+        inset -6px -6px 0 #FF9BA4;
+}
+
+.math-student::after {
+    content: '😊';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    filter: contrast(2) brightness(1.2);
+}
+
+/* 計算機キャラクター */
+.calculator-char {
+    width: 48px;
+    height: 60px;
+    background: #34495E;
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 
+        inset 0 0 0 2px #2C3E50,
+        inset 0 0 0 4px #1A252F;
+}
+
+.calculator-char::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 32px;
+    height: 16px;
+    background: #2ECC71;
+    box-shadow: 
+        inset 0 0 0 1px #27AE60,
+        0 2px 0 #1E8449;
+}
+
+.calculator-char::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    width: 32px;
+    height: 28px;
+    background: 
+        repeating-linear-gradient(
+            0deg,
+            #5DADE2 0px, #5DADE2 4px,
+            #3498DB 4px, #3498DB 8px
+        );
+    box-shadow: inset 0 0 0 1px #2980B9;
+}
+
+/* 数字キャラクター (0-9) */
+.number-char {
+    width: 40px;
+    height: 40px;
+    background: #F39C12;
+    position: relative;
+    border-radius: 20%;
+    box-shadow: 
+        inset 0 0 0 2px #E67E22,
+        inset 0 0 0 4px #D35400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 20px;
+    color: #FFF;
+    text-shadow: 1px 1px 0 #C0392B;
+}
+
+/* アニメーション効果 */
+.pixel-character.bounce {
+    animation: pixelBounce 1s ease-in-out infinite;
+}
+
+@keyframes pixelBounce {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+.pixel-character.shake {
+    animation: pixelShake 0.5s ease-in-out infinite;
+}
+
+@keyframes pixelShake {
+    0%, 100% { transform: translateX(0px); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.pixel-character.glow {
+    animation: pixelGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pixelGlow {
+    0% { filter: brightness(1) drop-shadow(0 0 0 rgba(74, 144, 226, 0)); }
+    100% { filter: brightness(1.2) drop-shadow(0 0 8px rgba(74, 144, 226, 0.6)); }
+}
+
+/* ホバー効果 */
+.pixel-character:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+/* キャラクター配置用のコンテナ */
+.pixel-scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+    background: 
+        linear-gradient(45deg, #E8F4FD 25%, transparent 25%),
+        linear-gradient(-45deg, #E8F4FD 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #E8F4FD 75%),
+        linear-gradient(-45deg, transparent 75%, #E8F4FD 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    border-radius: 12px;
+    border: 3px solid #BDC3C7;
+}
+
+/* 数式表示用のピクセル文字 */
+.pixel-equation {
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2C3E50;
+    text-shadow: 2px 2px 0 #BDC3C7;
+    letter-spacing: 4px;
+    background: #ECF0F1;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid #95A5A6;
+    display: inline-block;
+    image-rendering: pixelated;
+}
+
+/* 特殊効果: 正解時のキラキラ */
+.pixel-sparkle {
+    position: relative;
+    overflow: hidden;
+}
+
+.pixel-sparkle::before {
+    content: '✨';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    font-size: 16px;
+    opacity: 0;
+    animation: sparkleAnimation 1.5s ease-in-out;
+}
+
+@keyframes sparkleAnimation {
+    0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+    100% { opacity: 0; transform: scale(1.5) rotate(360deg); }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .pixel-character {
+        transform: scale(0.8);
+    }
+    
+    .pixel-scene {
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .pixel-equation {
+        font-size: 18px;
+        letter-spacing: 2px;
+        padding: 6px 12px;
+    }
+}
