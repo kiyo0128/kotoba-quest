@@ -322,17 +322,23 @@ function selectChoice(choiceIndex) {
 
 // テンキー: 数字入力
 function inputNumber(num) {
+    console.log('数字入力:', num);
     const screen = document.getElementById('numpadScreen');
-    let currentValue = screen.textContent;
+    let currentValue = screen.textContent.trim();
     
-    if (currentValue === '0') {
+    console.log('現在の値:', currentValue);
+    
+    if (currentValue === '0' || currentValue === '') {
         currentValue = num;
     } else if (currentValue.length < 2) { // 最大2桁まで
         currentValue += num;
     }
     
+    console.log('新しい値:', currentValue);
     screen.textContent = currentValue;
     numericAnswer = parseInt(currentValue);
+    
+    console.log('numericAnswer設定:', numericAnswer);
     
     // 回答ボタンを有効化
     document.getElementById('submitBtn').disabled = false;
@@ -340,29 +346,31 @@ function inputNumber(num) {
 
 // テンキー: 一文字削除
 function clearInput() {
+    console.log('一文字削除');
     const screen = document.getElementById('numpadScreen');
-    let currentValue = screen.textContent;
+    let currentValue = screen.textContent.trim();
     
     if (currentValue.length > 1) {
         currentValue = currentValue.slice(0, -1);
+        screen.textContent = currentValue;
+        numericAnswer = parseInt(currentValue);
     } else {
-        currentValue = '0';
+        screen.textContent = '0';
         numericAnswer = null;
         document.getElementById('submitBtn').disabled = true;
     }
     
-    screen.textContent = currentValue;
-    if (currentValue !== '0') {
-        numericAnswer = parseInt(currentValue);
-    }
+    console.log('削除後の値:', screen.textContent, 'numericAnswer:', numericAnswer);
 }
 
 // テンキー: 全クリア
 function clearAll() {
+    console.log('全クリア');
     const screen = document.getElementById('numpadScreen');
     screen.textContent = '0';
     numericAnswer = null;
     document.getElementById('submitBtn').disabled = true;
+    console.log('クリア後:', screen.textContent, 'numericAnswer:', numericAnswer);
 }
 
 // 回答送信
@@ -558,6 +566,17 @@ function updateEncouragementMessage() {
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
     console.log('ページ初期化開始');
+    console.log('問題タイプ:', isNumericQuestion ? '算数' : '国語');
+    
+    // 算数問題の場合の初期化
+    if (isNumericQuestion) {
+        const screen = document.getElementById('numpadScreen');
+        if (screen) {
+            screen.textContent = '0';
+            numericAnswer = null;
+            console.log('テンキー初期化完了');
+        }
+    }
     
     // 残り問題数を更新
     const remainingCount = {{ total_questions }} - {{ current_question_number }};
@@ -579,14 +598,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // キーボードショートカット
     document.addEventListener('keydown', function(e) {
-        const choiceCount = {{ current_question.choices|length }};
-        if (e.key >= '1' && e.key <= '3') {  // 3択に修正
-            const choiceIndex = parseInt(e.key) - 1;
-            if (choiceIndex < choiceCount) {
-                selectChoice(choiceIndex);
+        if (isNumericQuestion) {
+            // 算数問題の場合：数字キーでテンキー入力
+            if (e.key >= '0' && e.key <= '9') {
+                inputNumber(e.key);
+            } else if (e.key === 'Backspace') {
+                clearInput();
+            } else if (e.key === 'Delete' || e.key === 'Escape') {
+                clearAll();
+            } else if (e.key === 'Enter' && numericAnswer !== null) {
+                submitAnswer();
             }
-        } else if (e.key === 'Enter' && selectedChoice !== null) {
-            submitAnswer();
+        } else {
+            // 国語問題の場合：従来通り
+            const choiceCount = {{ current_question.choices|length }};
+            if (e.key >= '1' && e.key <= '3') {
+                const choiceIndex = parseInt(e.key) - 1;
+                if (choiceIndex < choiceCount) {
+                    selectChoice(choiceIndex);
+                }
+            } else if (e.key === 'Enter' && selectedChoice !== null) {
+                submitAnswer();
+            }
         }
     });
     
