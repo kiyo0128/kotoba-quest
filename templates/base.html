@@ -36,8 +36,7 @@
         
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 50%, #e2ebf0 100%);
-            background-attachment: fixed;
+            background: #f8f9fa;
             min-height: 100vh;
             margin: 0;
             padding: 0;
@@ -48,21 +47,6 @@
         .main-container {
             min-height: calc(100vh - 80px);
             padding: var(--spacing-sm);
-        }
-        
-        /* 子供向けの楽しいエフェクト */
-        @keyframes floatAnimation {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(90, 127, 140, 0.2); }
-            50% { box-shadow: 0 0 30px rgba(90, 127, 140, 0.3); }
-        }
-        
-        .float-animation {
-            animation: floatAnimation 3s ease-in-out infinite;
         }
         
         .game-card {
